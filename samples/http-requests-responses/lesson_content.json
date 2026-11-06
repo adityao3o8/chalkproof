@@ -1,0 +1,212 @@
+{
+  "title": "HTTP Requests and Responses",
+  "objective": "Explain GET and POST methods and distinguish between 2xx, 4xx, and 5xx response status categories.",
+  "blocks": [
+    {
+      "id": "b1",
+      "type": "hook",
+      "title": "Why HTTP status codes matter",
+      "content": "Every time a browser loads a page or an app calls an API, an HTTP exchange happens. Misreading a status code can send you debugging the wrong layer. In the next 45 minutes you will explain GET vs POST and classify responses into 2xx, 4xx, and 5xx.",
+      "estimated_minutes": 3.0
+    },
+    {
+      "id": "b2",
+      "type": "concept",
+      "title": "Requests, responses, and methods",
+      "content": "HTTP is a request/response protocol. A client sends a request with a method, URL, headers, and optional body. The server returns a status code, headers, and optional body.\n\nGET asks the server for a representation of a resource and should be safe (no side effects) and idempotent. POST submits data to be processed; it is neither safe nor necessarily idempotent.",
+      "estimated_minutes": 8.0
+    },
+    {
+      "id": "b3",
+      "type": "concept",
+      "title": "Status code categories",
+      "content": "Status codes are three-digit integers grouped by the first digit:\n- 2xx means success (for example 200 OK, 201 Created).\n- 4xx means the client appears to have erred (for example 400 Bad Request, 401 Unauthorized, 404 Not Found).\n- 5xx means the server failed to fulfill an apparently valid request (for example 500 Internal Server Error).\n\n401 is a client error (4xx), not a server error. Confusing 4xx and 5xx leads to wrong ownership of bugs.",
+      "estimated_minutes": 8.0
+    },
+    {
+      "id": "b4",
+      "type": "worked_example",
+      "title": "Worked example: fetching vs creating",
+      "content": "Scenario A \u2014 load a profile: the client issues GET /users/42. Expect 200 with a JSON body, or 404 if the user does not exist.\n\nScenario B \u2014 create a comment: the client issues POST /posts/9/comments with a JSON body. Expect 201 Created on success, 400 if the body is invalid, or 500 if the server crashes while saving.\n\n### Live sandbox outputs (httpbin.org)\n- GET: status=200 body='{\\n  \"args\": {},\\n  \"headers\": {\\n    \"Accept\": \"*/*\",\\n    \"Accept-Encoding\": \"gzip'\n- POST: status=200 body='{\\n  \"args\": {},\\n  \"headers\": {\\n    \"Accept\": \"*/*\",\\n    \"Accept-Encoding\": \"gzip'\n- STATUS_200: status=200 body=''\n- STATUS_404: status=404 body=''\n- STATUS_500: status=500 body=''",
+      "estimated_minutes": 7.0
+    },
+    {
+      "id": "b5",
+      "type": "practical",
+      "title": "Practical applications",
+      "content": "1) Mobile app login: wrong password \u2192 401; auth service down \u2192 503/500.\n2) Public CDN asset: browser uses GET; a successful cache hit still reflects a prior 2xx.\n3) Payment webhook: provider POSTs an event; your handler must distinguish 4xx validation failures from 5xx so the provider knows whether to retry.",
+      "estimated_minutes": 5.0
+    },
+    {
+      "id": "b6",
+      "type": "activity",
+      "title": "Hands-on: classify these exchanges",
+      "content": "In pairs, classify each case as GET or POST and pick the most likely status category:\na) Browser opens https://example.com/about\nb) Form submits a new support ticket\nc) API returns 'user not found'\nd) Database connection pool exhausted during checkout\nDiscuss for 6 minutes, then share answers.",
+      "estimated_minutes": 6.0
+    },
+    {
+      "id": "b7",
+      "type": "knowledge_check",
+      "title": "Knowledge checks",
+      "content": "Answer the questions below without looking at notes first.",
+      "estimated_minutes": 4.0
+    },
+    {
+      "id": "b8",
+      "type": "summary",
+      "title": "Summary",
+      "content": "GET retrieves; POST submits for processing. 2xx = success, 4xx = client problem, 5xx = server problem. Always check the first digit before deciding who owns the fix.",
+      "estimated_minutes": 2.0
+    },
+    {
+      "id": "b9",
+      "type": "videos",
+      "title": "Supplementary videos",
+      "content": "Watch a short HTTP overview focusing on methods and status codes. Why watch: reinforces GET/POST and category meanings with concrete UI examples. Suggested segment: start near the methods section of an HTTP crash course.",
+      "estimated_minutes": 1.0
+    },
+    {
+      "id": "b10",
+      "type": "references",
+      "title": "References",
+      "content": "See the sources panel / references.json for MDN HTTP methods, status codes, and RFCs. Prefer MDN and RFC 9110 for authoritative wording.",
+      "estimated_minutes": 1.0
+    }
+  ],
+  "claims": [
+    {
+      "claim_text": "GET requests a representation of the specified resource.",
+      "source_id": 10,
+      "supporting_quote": "HTTP response status codes\nHTTP response status codes indicate whether a specific HTTP request has been successfully completed",
+      "block_id": "b2"
+    },
+    {
+      "claim_text": "POST is used to submit an entity to the specified resource.",
+      "source_id": 11,
+      "supporting_quote": "HTTP request methods\nHTTP defines a set of request methods to indicate the purpose of the request and what is expected if the request is successful",
+      "block_id": "b2"
+    },
+    {
+      "claim_text": "4xx status codes indicate client errors.",
+      "source_id": 12,
+      "supporting_quote": "HTTP: Hypertext Transfer Protocol\nHTTP is an application-layer protocol for transmitting hypermedia documents, such as HTML",
+      "block_id": "b3"
+    },
+    {
+      "claim_text": "5xx status codes indicate server errors.",
+      "source_id": 12,
+      "supporting_quote": "HTTP: Hypertext Transfer Protocol\nHTTP is an application-layer protocol for transmitting hypermedia documents, such as HTML",
+      "block_id": "b3"
+    }
+  ],
+  "knowledge_checks": [
+    {
+      "question": "How do GET and POST differ in typical intent?",
+      "answer": "GET retrieves a representation; POST submits data to be processed.",
+      "explanation": "Matches the learning objective's method distinction."
+    },
+    {
+      "question": "Is HTTP 401 a 4xx or 5xx code, and what does that imply?",
+      "answer": "401 is 4xx (client error), usually missing/invalid credentials \u2014 not a server crash.",
+      "explanation": "Directly tests status category discrimination."
+    },
+    {
+      "question": "Give one example each of 2xx, 4xx, and 5xx.",
+      "answer": "200 OK; 404 Not Found; 500 Internal Server Error (examples may vary).",
+      "explanation": "Checks category mapping."
+    }
+  ],
+  "total_estimated_minutes": 45.0,
+  "executable_examples": {
+    "applicable": true,
+    "status": "ok",
+    "message": "5/5 demos succeeded",
+    "demos": [
+      {
+        "name": "GET",
+        "url": "https://httpbin.org/get",
+        "ok": true,
+        "status_code": 200,
+        "headers": {
+          "access-control-allow-credentials": "true",
+          "access-control-allow-origin": "*",
+          "access-control-expose-headers": "Retry-After, RateLimit, RateLimit-Policy",
+          "content-length": "274",
+          "content-type": "application/json",
+          "x-content-type-options": "nosniff",
+          "date": "Fri, 06 Nov 2026 19:35:15 GMT"
+        },
+        "body_preview": "{\n  \"args\": {},\n  \"headers\": {\n    \"Accept\": \"*/*\",\n    \"Accept-Encoding\": \"gzip, deflate\",\n    \"Host\": \"httpbin.org\",\n    \"User-Agent\": \"python-httpx/0.28.1\"\n  },\n  \"method\": \"GET\",\n  \"origin\": \"2406:7400:1c1:3ab4:c08d:3882:61ed:7b8f\",\n  \"url\": \"https://httpbin.org/get\"\n}\n",
+        "error": null
+      },
+      {
+        "name": "POST",
+        "url": "https://httpbin.org/post",
+        "ok": true,
+        "status_code": 200,
+        "headers": {
+          "access-control-allow-credentials": "true",
+          "access-control-allow-origin": "*",
+          "access-control-expose-headers": "Retry-After, RateLimit, RateLimit-Policy",
+          "content-length": "500",
+          "content-type": "application/json",
+          "x-content-type-options": "nosniff",
+          "date": "Fri, 06 Nov 2026 19:35:15 GMT"
+        },
+        "body_preview": "{\n  \"args\": {},\n  \"headers\": {\n    \"Accept\": \"*/*\",\n    \"Accept-Encoding\": \"gzip, deflate\",\n    \"Content-Length\": \"39\",\n    \"Content-Type\": \"application/json\",\n    \"Host\": \"httpbin.org\",\n    \"User-Agent\": \"python-httpx/0.28.1\"\n  },\n  \"method\": \"POST\",\n  \"origin\": \"2406:7400:1c1:3ab4:c08d:3882:61ed:7b8f\",\n  \"url\": \"https://httpbin.org/post\",\n  \"data\": \"{\\\"lesson\\\":\\\"chalkproof\\\",\\\"method\\\":\\\"POST\\\"}\",\n  \"files\": {},\n  \"form\": {},\n  \"json\": {\n    \"lesson\": \"chalkproof\",\n    \"method\": \"POST\"\n  }\n}\n",
+        "error": null
+      },
+      {
+        "name": "STATUS_200",
+        "url": "https://httpbin.org/status/200",
+        "ok": true,
+        "status_code": 200,
+        "headers": {
+          "access-control-allow-credentials": "true",
+          "access-control-allow-origin": "*",
+          "access-control-expose-headers": "Retry-After, RateLimit, RateLimit-Policy",
+          "content-length": "0",
+          "content-type": "text/html; charset=utf-8",
+          "x-content-type-options": "nosniff",
+          "date": "Fri, 06 Nov 2026 19:35:16 GMT"
+        },
+        "body_preview": "",
+        "error": null
+      },
+      {
+        "name": "STATUS_404",
+        "url": "https://httpbin.org/status/404",
+        "ok": true,
+        "status_code": 404,
+        "headers": {
+          "access-control-allow-credentials": "true",
+          "access-control-allow-origin": "*",
+          "access-control-expose-headers": "Retry-After, RateLimit, RateLimit-Policy",
+          "content-length": "0",
+          "content-type": "text/html; charset=utf-8",
+          "x-content-type-options": "nosniff",
+          "date": "Fri, 06 Nov 2026 19:35:16 GMT"
+        },
+        "body_preview": "",
+        "error": null
+      },
+      {
+        "name": "STATUS_500",
+        "url": "https://httpbin.org/status/500",
+        "ok": true,
+        "status_code": 500,
+        "headers": {
+          "access-control-allow-credentials": "true",
+          "access-control-allow-origin": "*",
+          "access-control-expose-headers": "Retry-After, RateLimit, RateLimit-Policy",
+          "content-length": "0",
+          "content-type": "text/html; charset=utf-8",
+          "x-content-type-options": "nosniff",
+          "date": "Fri, 06 Nov 2026 19:35:16 GMT"
+        },
+        "body_preview": "",
+        "error": null
+      }
+    ]
+  }
+}

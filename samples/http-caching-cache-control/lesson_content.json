@@ -1,0 +1,200 @@
+{
+  "title": "HTTP Caching and Cache-Control Headers",
+  "objective": "Explain how Cache-Control directives (max-age, no-store, private, public) affect browser and shared caches, and identify common caching mistakes.",
+  "blocks": [
+    {
+      "id": "b1",
+      "type": "hook",
+      "title": "When caches surprise you",
+      "content": "A fix ships to production but users still see the old page. Often the culprit is caching, not your deploy. This lesson focuses on Cache-Control directives and common mistakes.",
+      "estimated_minutes": 3.0
+    },
+    {
+      "id": "b2",
+      "type": "concept",
+      "title": "What Cache-Control does",
+      "content": "Cache-Control is an HTTP header that tells browsers and shared caches how responses may be stored and reused. Directives include max-age (freshness lifetime in seconds), no-store (do not store), private (only browser caches), and public (shared caches may store).",
+      "estimated_minutes": 9.0
+    },
+    {
+      "id": "b3",
+      "type": "concept",
+      "title": "Freshness vs revalidation",
+      "content": "Within max-age, a cache may reuse a response without contacting the origin. After freshness expires, caches may revalidate. Mixing no-store with max-age is a common misconfiguration \u2014 no-store means the response must not be stored in any cache.",
+      "estimated_minutes": 8.0
+    },
+    {
+      "id": "b4",
+      "type": "worked_example",
+      "title": "Worked examples",
+      "content": "Example 1: Cache-Control: public, max-age=3600 \u2014 shared caches may serve for one hour.\nExample 2: Cache-Control: private, max-age=60 \u2014 browser-only, one minute.\nExample 3: Cache-Control: no-store \u2014 never cache (typical for authenticated HTML).\n\n### Live sandbox outputs (httpbin.org)\n- GET: status=200 body='{\\n  \"args\": {},\\n  \"headers\": {\\n    \"Accept\": \"*/*\",\\n    \"Accept-Encoding\": \"gzip'\n- POST: status=200 body='{\\n  \"args\": {},\\n  \"headers\": {\\n    \"Accept\": \"*/*\",\\n    \"Accept-Encoding\": \"gzip'\n- STATUS_200: status=200 body=''\n- STATUS_404: status=404 body=''\n- STATUS_500: status=500 body=''",
+      "estimated_minutes": 7.0
+    },
+    {
+      "id": "b5",
+      "type": "practical",
+      "title": "Practical applications",
+      "content": "1) Static assets: long max-age with fingerprinted filenames.\n2) Personalized dashboards: private or no-store.\n3) CDN misconfig: public caching of Set-Cookie responses \u2014 a security/privacy bug.",
+      "estimated_minutes": 5.0
+    },
+    {
+      "id": "b6",
+      "type": "activity",
+      "title": "Hands-on header clinic",
+      "content": "Given three response headers, choose the correct directive set and explain who may cache them. Debate edge cases for logged-in users.",
+      "estimated_minutes": 6.0
+    },
+    {
+      "id": "b7",
+      "type": "knowledge_check",
+      "title": "Knowledge checks",
+      "content": "Answer without notes first.",
+      "estimated_minutes": 4.0
+    },
+    {
+      "id": "b8",
+      "type": "summary",
+      "title": "Summary",
+      "content": "max-age sets freshness; private vs public controls who stores; no-store forbids storage. Validate headers against the sensitivity of the content.",
+      "estimated_minutes": 2.0
+    },
+    {
+      "id": "b9",
+      "type": "videos",
+      "title": "Supplementary videos",
+      "content": "Watch an HTTP caching overview focusing on Cache-Control. Suggested: caching section of an HTTP course.",
+      "estimated_minutes": 1.0
+    },
+    {
+      "id": "b10",
+      "type": "references",
+      "title": "References",
+      "content": "MDN Cache-Control, MDN HTTP caching guide, RFC 9111.",
+      "estimated_minutes": 1.0
+    }
+  ],
+  "claims": [
+    {
+      "claim_text": "Cache-Control controls how responses are cached.",
+      "source_id": 19,
+      "supporting_quote": "Cache-Control header\nBaseline\nWidely available\nThis feature is well established and works across many devices and browser versions",
+      "block_id": "b2"
+    },
+    {
+      "claim_text": "no-store means the response must not be stored in any cache.",
+      "source_id": 20,
+      "supporting_quote": "no-store",
+      "block_id": "b3"
+    }
+  ],
+  "knowledge_checks": [
+    {
+      "question": "What does max-age control?",
+      "answer": "How long a response is considered fresh (in seconds).",
+      "explanation": "Core Cache-Control directive."
+    },
+    {
+      "question": "When would you use no-store?",
+      "answer": "When the response must not be stored in any cache (e.g., sensitive pages).",
+      "explanation": "Tests directive understanding."
+    },
+    {
+      "question": "Difference between private and public?",
+      "answer": "private = browser-only caches; public = shared caches may store.",
+      "explanation": "Common mistake area."
+    }
+  ],
+  "total_estimated_minutes": 46.0,
+  "executable_examples": {
+    "applicable": true,
+    "status": "ok",
+    "message": "5/5 demos succeeded",
+    "demos": [
+      {
+        "name": "GET",
+        "url": "https://httpbin.org/get",
+        "ok": true,
+        "status_code": 200,
+        "headers": {
+          "access-control-allow-credentials": "true",
+          "access-control-allow-origin": "*",
+          "access-control-expose-headers": "Retry-After, RateLimit, RateLimit-Policy",
+          "content-length": "274",
+          "content-type": "application/json",
+          "x-content-type-options": "nosniff",
+          "date": "Fri, 06 Nov 2026 19:35:20 GMT"
+        },
+        "body_preview": "{\n  \"args\": {},\n  \"headers\": {\n    \"Accept\": \"*/*\",\n    \"Accept-Encoding\": \"gzip, deflate\",\n    \"Host\": \"httpbin.org\",\n    \"User-Agent\": \"python-httpx/0.28.1\"\n  },\n  \"method\": \"GET\",\n  \"origin\": \"2406:7400:1c1:3ab4:c08d:3882:61ed:7b8f\",\n  \"url\": \"https://httpbin.org/get\"\n}\n",
+        "error": null
+      },
+      {
+        "name": "POST",
+        "url": "https://httpbin.org/post",
+        "ok": true,
+        "status_code": 200,
+        "headers": {
+          "access-control-allow-credentials": "true",
+          "access-control-allow-origin": "*",
+          "access-control-expose-headers": "Retry-After, RateLimit, RateLimit-Policy",
+          "content-length": "500",
+          "content-type": "application/json",
+          "x-content-type-options": "nosniff",
+          "date": "Fri, 06 Nov 2026 19:35:20 GMT"
+        },
+        "body_preview": "{\n  \"args\": {},\n  \"headers\": {\n    \"Accept\": \"*/*\",\n    \"Accept-Encoding\": \"gzip, deflate\",\n    \"Content-Length\": \"39\",\n    \"Content-Type\": \"application/json\",\n    \"Host\": \"httpbin.org\",\n    \"User-Agent\": \"python-httpx/0.28.1\"\n  },\n  \"method\": \"POST\",\n  \"origin\": \"2406:7400:1c1:3ab4:c08d:3882:61ed:7b8f\",\n  \"url\": \"https://httpbin.org/post\",\n  \"data\": \"{\\\"lesson\\\":\\\"chalkproof\\\",\\\"method\\\":\\\"POST\\\"}\",\n  \"files\": {},\n  \"form\": {},\n  \"json\": {\n    \"lesson\": \"chalkproof\",\n    \"method\": \"POST\"\n  }\n}\n",
+        "error": null
+      },
+      {
+        "name": "STATUS_200",
+        "url": "https://httpbin.org/status/200",
+        "ok": true,
+        "status_code": 200,
+        "headers": {
+          "access-control-allow-credentials": "true",
+          "access-control-allow-origin": "*",
+          "access-control-expose-headers": "Retry-After, RateLimit, RateLimit-Policy",
+          "content-length": "0",
+          "content-type": "text/html; charset=utf-8",
+          "x-content-type-options": "nosniff",
+          "date": "Fri, 06 Nov 2026 19:35:20 GMT"
+        },
+        "body_preview": "",
+        "error": null
+      },
+      {
+        "name": "STATUS_404",
+        "url": "https://httpbin.org/status/404",
+        "ok": true,
+        "status_code": 404,
+        "headers": {
+          "access-control-allow-credentials": "true",
+          "access-control-allow-origin": "*",
+          "access-control-expose-headers": "Retry-After, RateLimit, RateLimit-Policy",
+          "content-length": "0",
+          "content-type": "text/html; charset=utf-8",
+          "x-content-type-options": "nosniff",
+          "date": "Fri, 06 Nov 2026 19:35:21 GMT"
+        },
+        "body_preview": "",
+        "error": null
+      },
+      {
+        "name": "STATUS_500",
+        "url": "https://httpbin.org/status/500",
+        "ok": true,
+        "status_code": 500,
+        "headers": {
+          "access-control-allow-credentials": "true",
+          "access-control-allow-origin": "*",
+          "access-control-expose-headers": "Retry-After, RateLimit, RateLimit-Policy",
+          "content-length": "0",
+          "content-type": "text/html; charset=utf-8",
+          "x-content-type-options": "nosniff",
+          "date": "Fri, 06 Nov 2026 19:35:21 GMT"
+        },
+        "body_preview": "",
+        "error": null
+      }
+    ]
+  }
+}

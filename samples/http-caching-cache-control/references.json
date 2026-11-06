@@ -1,0 +1,83 @@
+[
+  {
+    "id": 19,
+    "type": "web",
+    "title": "MDN: Cache-Control",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Cache-Control",
+    "reliability_tier": "high",
+    "relevant_segment": null,
+    "video_verified": true
+  },
+  {
+    "id": 20,
+    "type": "web",
+    "title": "MDN: HTTP caching",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Caching",
+    "reliability_tier": "high",
+    "relevant_segment": null,
+    "video_verified": true
+  },
+  {
+    "id": 21,
+    "type": "web",
+    "title": "RFC 9111 HTTP Caching",
+    "url": "https://www.rfc-editor.org/rfc/rfc9111.html",
+    "reliability_tier": "high",
+    "relevant_segment": null,
+    "video_verified": true
+  },
+  {
+    "id": 22,
+    "type": "web",
+    "title": "MDN: HTTP overview",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP",
+    "reliability_tier": "high",
+    "relevant_segment": null,
+    "video_verified": true
+  },
+  {
+    "id": 23,
+    "type": "web",
+    "title": "MDN: HTTP request methods",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Methods",
+    "reliability_tier": "high",
+    "relevant_segment": null,
+    "video_verified": true
+  },
+  {
+    "id": 24,
+    "type": "web",
+    "title": "MDN: HTTP response status codes",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status",
+    "reliability_tier": "high",
+    "relevant_segment": null,
+    "video_verified": true
+  },
+  {
+    "id": 25,
+    "type": "book",
+    "title": "Computer networking",
+    "url": "https://openlibrary.org/works/OL56272W",
+    "reliability_tier": "medium",
+    "relevant_segment": null,
+    "video_verified": true
+  },
+  {
+    "id": 26,
+    "type": "book",
+    "title": "TCP/IP Illustrated",
+    "url": "https://openlibrary.org/works/OL2705896W",
+    "reliability_tier": "medium",
+    "relevant_segment": null,
+    "video_verified": true
+  },
+  {
+    "id": 27,
+    "type": "video",
+    "title": "HTTP Crash Course & Exploration",
+    "url": "https://www.youtube.com/watch?v=iYM2zFP3Zn0",
+    "reliability_tier": "low",
+    "relevant_segment": null,
+    "video_verified": false
+  }
+]

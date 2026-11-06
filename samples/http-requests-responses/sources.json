@@ -1,0 +1,83 @@
+[
+  {
+    "id": 10,
+    "type": "web",
+    "title": "MDN: HTTP response status codes",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status",
+    "reliability_tier": "high",
+    "relevant_segment": null,
+    "video_verified": true
+  },
+  {
+    "id": 11,
+    "type": "web",
+    "title": "MDN: HTTP request methods",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Methods",
+    "reliability_tier": "high",
+    "relevant_segment": null,
+    "video_verified": true
+  },
+  {
+    "id": 12,
+    "type": "web",
+    "title": "MDN: HTTP overview",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP",
+    "reliability_tier": "high",
+    "relevant_segment": null,
+    "video_verified": true
+  },
+  {
+    "id": 13,
+    "type": "web",
+    "title": "RFC 9110 HTTP Semantics",
+    "url": "https://www.rfc-editor.org/rfc/rfc9110.html",
+    "reliability_tier": "high",
+    "relevant_segment": null,
+    "video_verified": true
+  },
+  {
+    "id": 14,
+    "type": "web",
+    "title": "MDN: GET",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Methods/GET",
+    "reliability_tier": "high",
+    "relevant_segment": null,
+    "video_verified": true
+  },
+  {
+    "id": 15,
+    "type": "web",
+    "title": "MDN: POST",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Methods/POST",
+    "reliability_tier": "high",
+    "relevant_segment": null,
+    "video_verified": true
+  },
+  {
+    "id": 16,
+    "type": "book",
+    "title": "Data Communications and Networking",
+    "url": "https://openlibrary.org/works/OL35531W",
+    "reliability_tier": "medium",
+    "relevant_segment": null,
+    "video_verified": true
+  },
+  {
+    "id": 17,
+    "type": "book",
+    "title": "TCP/IP Illustrated",
+    "url": "https://openlibrary.org/works/OL2705896W",
+    "reliability_tier": "medium",
+    "relevant_segment": null,
+    "video_verified": true
+  },
+  {
+    "id": 18,
+    "type": "video",
+    "title": "HTTP Crash Course & Exploration",
+    "url": "https://www.youtube.com/watch?v=iYM2zFP3Zn0",
+    "reliability_tier": "low",
+    "relevant_segment": null,
+    "video_verified": false
+  }
+]

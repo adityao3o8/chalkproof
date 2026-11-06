@@ -1,0 +1,81 @@
+<!DOCTYPE html><html><head><meta charset='utf-8'>
+<title>HTTP Requests and Responses</title>
+<style>body{font-family:Georgia,serif;max-width:740px;margin:2rem auto;padding:0 1rem;line-height:1.55}h1,h2{font-family:system-ui,sans-serif}.meta{color:#555}.block{margin:1.5rem 0}</style>
+</head><body>
+<h1>HTTP Requests and Responses</h1>
+<p class='meta'><strong>Objective:</strong> Explain GET and POST methods and distinguish between 2xx, 4xx, and 5xx response status categories.</p>
+<p class='meta'>Estimated time: 45.0 minutes</p>
+<div class='block'>
+<h2>Why HTTP status codes matter</h2>
+<p class='meta'>hook · 3.0 min</p>
+<div>Every time a browser loads a page or an app calls an API, an HTTP exchange happens. Misreading a status code can send you debugging the wrong layer. In the next 45 minutes you will explain GET vs POST and classify responses into 2xx, 4xx, and 5xx.</div>
+</div>
+<div class='block'>
+<h2>Requests, responses, and methods</h2>
+<p class='meta'>concept · 8.0 min</p>
+<div>HTTP is a request/response protocol. A client sends a request with a method, URL, headers, and optional body. The server returns a status code, headers, and optional body.<br>
+<br>
+GET asks the server for a representation of a resource and should be safe (no side effects) and idempotent. POST submits data to be processed; it is neither safe nor necessarily idempotent.</div>
+</div>
+<div class='block'>
+<h2>Status code categories</h2>
+<p class='meta'>concept · 8.0 min</p>
+<div>Status codes are three-digit integers grouped by the first digit:<br>
+- 2xx means success (for example 200 OK, 201 Created).<br>
+- 4xx means the client appears to have erred (for example 400 Bad Request, 401 Unauthorized, 404 Not Found).<br>
+- 5xx means the server failed to fulfill an apparently valid request (for example 500 Internal Server Error).<br>
+<br>
+401 is a client error (4xx), not a server error. Confusing 4xx and 5xx leads to wrong ownership of bugs.</div>
+</div>
+<div class='block'>
+<h2>Worked example: fetching vs creating</h2>
+<p class='meta'>worked_example · 7.0 min</p>
+<div>Scenario A — load a profile: the client issues GET /users/42. Expect 200 with a JSON body, or 404 if the user does not exist.<br>
+<br>
+Scenario B — create a comment: the client issues POST /posts/9/comments with a JSON body. Expect 201 Created on success, 400 if the body is invalid, or 500 if the server crashes while saving.<br>
+<br>
+### Live sandbox outputs (httpbin.org)<br>
+- GET: status=200 body='{\n  &quot;args&quot;: {},\n  &quot;headers&quot;: {\n    &quot;Accept&quot;: &quot;*/*&quot;,\n    &quot;Accept-Encoding&quot;: &quot;gzip'<br>
+- POST: status=200 body='{\n  &quot;args&quot;: {},\n  &quot;headers&quot;: {\n    &quot;Accept&quot;: &quot;*/*&quot;,\n    &quot;Accept-Encoding&quot;: &quot;gzip'<br>
+- STATUS_200: status=200 body=''<br>
+- STATUS_404: status=404 body=''<br>
+- STATUS_500: status=500 body=''</div>
+</div>
+<div class='block'>
+<h2>Practical applications</h2>
+<p class='meta'>practical · 5.0 min</p>
+<div>1) Mobile app login: wrong password → 401; auth service down → 503/500.<br>
+2) Public CDN asset: browser uses GET; a successful cache hit still reflects a prior 2xx.<br>
+3) Payment webhook: provider POSTs an event; your handler must distinguish 4xx validation failures from 5xx so the provider knows whether to retry.</div>
+</div>
+<div class='block'>
+<h2>Hands-on: classify these exchanges</h2>
+<p class='meta'>activity · 6.0 min</p>
+<div>In pairs, classify each case as GET or POST and pick the most likely status category:<br>
+a) Browser opens https://example.com/about<br>
+b) Form submits a new support ticket<br>
+c) API returns 'user not found'<br>
+d) Database connection pool exhausted during checkout<br>
+Discuss for 6 minutes, then share answers.</div>
+</div>
+<div class='block'>
+<h2>Knowledge checks</h2>
+<p class='meta'>knowledge_check · 4.0 min</p>
+<div>Answer the questions below without looking at notes first.</div>
+</div>
+<div class='block'>
+<h2>Summary</h2>
+<p class='meta'>summary · 2.0 min</p>
+<div>GET retrieves; POST submits for processing. 2xx = success, 4xx = client problem, 5xx = server problem. Always check the first digit before deciding who owns the fix.</div>
+</div>
+<div class='block'>
+<h2>Supplementary videos</h2>
+<p class='meta'>videos · 1.0 min</p>
+<div>Watch a short HTTP overview focusing on methods and status codes. Why watch: reinforces GET/POST and category meanings with concrete UI examples. Suggested segment: start near the methods section of an HTTP crash course.</div>
+</div>
+<div class='block'>
+<h2>References</h2>
+<p class='meta'>references · 1.0 min</p>
+<div>See the sources panel / references.json for MDN HTTP methods, status codes, and RFCs. Prefer MDN and RFC 9110 for authoritative wording.</div>
+</div>
+</body></html>
