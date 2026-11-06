@@ -68,6 +68,8 @@ def assign_reliability(url: str, title: str = "") -> str:
     # RFC / MDN path heuristics
     if "rfc" in host or "/rfc" in url.lower() or "mdn" in host:
         return "high"
+    if "wikipedia.org" in full or "khanacademy.org" in full:
+        return "medium"
     if any(h in full for h in MEDIUM_TIER_HINTS):
         return "medium"
     if any(k in title.lower() for k in ("official", "documentation", "specification", "standard")):
@@ -99,6 +101,11 @@ async def _search_ddg(query: str, max_results: int = 8) -> list[dict[str, Any]]:
     ]
 
 
+USER_AGENT = (
+    "ChalkproofLessonBot/1.0 (local educational tool; +https://localhost; "
+    "contact: chalkproof@localhost)"
+)
+
 # Curated high-quality docs used when live search APIs are unavailable
 CURATED_DOCS: list[dict[str, str]] = [
     {"title": "MDN: HTTP overview", "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP", "keywords": "http request response"},
@@ -111,12 +118,51 @@ CURATED_DOCS: list[dict[str, str]] = [
     {"title": "RFC 9110 HTTP Semantics", "url": "https://www.rfc-editor.org/rfc/rfc9110.html", "keywords": "http semantics status method"},
     {"title": "RFC 9111 HTTP Caching", "url": "https://www.rfc-editor.org/rfc/rfc9111.html", "keywords": "http caching cache-control"},
     {"title": "MDN: DNS", "url": "https://developer.mozilla.org/en-US/docs/Glossary/DNS", "keywords": "dns resolution domain"},
+    # General / maths fallbacks
+    {"title": "Wikipedia: Mathematics", "url": "https://en.wikipedia.org/wiki/Mathematics", "keywords": "math maths mathematics algebra arithmetic"},
+    {"title": "Wikipedia: Arithmetic", "url": "https://en.wikipedia.org/wiki/Arithmetic", "keywords": "math maths arithmetic numbers addition subtraction"},
+    {"title": "Wikipedia: Algebra", "url": "https://en.wikipedia.org/wiki/Algebra", "keywords": "math maths algebra equation variable"},
+    {"title": "Wikipedia: Geometry", "url": "https://en.wikipedia.org/wiki/Geometry", "keywords": "math maths geometry shape angle"},
+    {"title": "Khan Academy: Math", "url": "https://www.khanacademy.org/math", "keywords": "math maths learn mathematics"},
 ]
 
 
+def _is_web_tech_topic(query: str) -> bool:
+    q = query.lower()
+    tech = ("http", "https", "api", "dns", "cache", "html", "css", "javascript", "tcp", "rest", "header", "status code")
+    return any(t in q for t in tech)
+
+
 async def _search_wikipedia(query: str, max_results: int = 5) -> list[dict[str, Any]]:
-    """MediaWiki opensearch — reliable, no API key."""
-    async with httpx.AsyncClient(timeout=20.0) as client:
+    """Wikipedia search via REST + opensearch fallback."""
+    headers = {"User-Agent": USER_AGENT, "Accept": "application/json"}
+    out: list[dict[str, Any]] = []
+    async with httpx.AsyncClient(timeout=20.0, headers=headers, follow_redirects=True) as client:
+        # Prefer REST search (often less blocked than action API for bots)
+        try:
+            resp = await client.get(
+                "https://en.wikipedia.org/w/rest.php/v1/search/title",
+                params={"q": query, "limit": max_results},
+            )
+            if resp.status_code == 200:
+                for item in resp.json().get("pages", [])[:max_results]:
+                    title = item.get("title") or item.get("key") or ""
+                    if not title:
+                        continue
+                    slug = title.replace(" ", "_")
+                    out.append(
+                        {
+                            "title": title,
+                            "url": f"https://en.wikipedia.org/wiki/{slug}",
+                            "snippet": item.get("description") or item.get("excerpt") or "",
+                        }
+                    )
+        except Exception as e:
+            logger.warning("Wikipedia REST search failed: %s", e)
+
+        if out:
+            return out
+
         resp = await client.get(
             "https://en.wikipedia.org/w/api.php",
             params={
@@ -126,15 +172,12 @@ async def _search_wikipedia(query: str, max_results: int = 5) -> list[dict[str, 
                 "namespace": 0,
                 "format": "json",
             },
-            headers={"User-Agent": "ChalkproofLessonBot/1.0"},
         )
         resp.raise_for_status()
         data = resp.json()
-        # [query, titles[], descriptions[], urls[]]
         titles = data[1] if len(data) > 1 else []
         descs = data[2] if len(data) > 2 else []
         urls = data[3] if len(data) > 3 else []
-        out = []
         for i, title in enumerate(titles):
             out.append(
                 {
@@ -143,7 +186,21 @@ async def _search_wikipedia(query: str, max_results: int = 5) -> list[dict[str, 
                     "snippet": descs[i] if i < len(descs) else "",
                 }
             )
-        return out
+    return out
+
+
+async def _wikipedia_summary(title: str) -> str:
+    """Fetch plain-text summary for a Wikipedia page title."""
+    headers = {"User-Agent": USER_AGENT, "Accept": "application/json"}
+    slug = title.replace(" ", "_")
+    async with httpx.AsyncClient(timeout=20.0, headers=headers, follow_redirects=True) as client:
+        resp = await client.get(f"https://en.wikipedia.org/api/rest_v1/page/summary/{slug}")
+        if resp.status_code != 200:
+            return ""
+        data = resp.json()
+        extract = data.get("extract") or ""
+        desc = data.get("description") or ""
+        return f"{desc}\n\n{extract}".strip()[:8000]
 
 
 def _curated_matches(query: str, max_results: int = 6) -> list[dict[str, Any]]:
@@ -197,11 +254,17 @@ async def web_search(query: str, max_results: int = 8) -> list[dict[str, Any]]:
 
 
 async def fetch_page_text(url: str, timeout: float = 20.0) -> str:
+    # Wikipedia: use REST summary (more reliable than scraping HTML)
+    if "wikipedia.org/wiki/" in url:
+        title = url.rstrip("/").split("/wiki/")[-1]
+        text = await _wikipedia_summary(title)
+        if text:
+            return text
     try:
         async with httpx.AsyncClient(
             timeout=timeout,
             follow_redirects=True,
-            headers={"User-Agent": "ChalkproofLessonBot/1.0"},
+            headers={"User-Agent": USER_AGENT},
         ) as client:
             resp = await client.get(url)
             resp.raise_for_status()
@@ -323,6 +386,13 @@ async def search_youtube(query: str, max_results: int = 3) -> list[dict[str, Any
             "snippet": "DNS resolution explained",
             "keywords": "dns resolution domain",
         },
+        {
+            "title": "Introduction to Mathematics",
+            "url": "https://www.youtube.com/watch?v=V6DOm4X9N5E",
+            "video_id": "V6DOm4X9N5E",
+            "snippet": "Overview of mathematics topics for beginners",
+            "keywords": "math maths mathematics algebra arithmetic",
+        },
     ]
     q = query.lower()
     for v in fallback_videos:
@@ -358,8 +428,7 @@ def fetch_transcript(video_id: str) -> tuple[str, bool]:
 
 async def check_video_relevance(objective: str, title: str, transcript: str) -> VideoRelevance:
     settings = get_settings()
-    has_keys = bool(settings.openai_api_key or settings.anthropic_api_key or settings.google_api_key)
-    if settings.chalkproof_demo_mode or not has_keys:
+    if settings.chalkproof_demo_mode or not settings.has_llm_keys:
         # Keyword heuristic when LLM unavailable
         blob = f"{title}\n{transcript[:2000]}".lower()
         keys = [w for w in objective.lower().replace(",", " ").split() if len(w) > 3]
@@ -407,8 +476,11 @@ async def run_research(session: Session, project_id: int, title: str, objective:
     query = f"{title}: {objective}"
     web_results: list[dict[str, Any]] = []
     try:
-        # Prefer official docs
-        web_results = await web_search(f"{query} site:developer.mozilla.org OR site:rfc-editor.org OR documentation", 5)
+        if _is_web_tech_topic(query):
+            web_results = await web_search(
+                f"{query} site:developer.mozilla.org OR site:rfc-editor.org OR documentation",
+                5,
+            )
         more = await web_search(query, 6)
         seen = {r["url"] for r in web_results}
         for r in more:
@@ -441,9 +513,14 @@ async def run_research(session: Session, project_id: int, title: str, objective:
         session.add(src)
         saved += 1
 
-    # Books — keep query short for better catalog matches
+    # Books — keep query short; avoid forcing networking for non-tech topics
     try:
-        book_query = " ".join(title.split()[:6]) + " computer networking"
+        short = " ".join(title.split()[:6])
+        book_query = (
+            f"{short} computer networking"
+            if _is_web_tech_topic(query)
+            else f"{short} textbook introduction"
+        )
         books = await search_books(book_query, limit=2)
         for b in books:
             text = b.get("snippet") or f"{b['title']} by {b.get('authors', '')}"

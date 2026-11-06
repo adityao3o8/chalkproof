@@ -114,17 +114,32 @@ async def run_step(session: Session, project_id: int, step: str) -> dict[str, An
         raise
 
 
-async def run_all(session: Session, project_id: int) -> dict[str, Any]:
-    """Run remaining pending/failed steps in order; skip already done."""
+async def run_all(
+    session: Session,
+    project_id: int,
+    *,
+    force: bool = False,
+) -> dict[str, Any]:
+    """Run remaining pending/failed steps in order; skip already done unless force=True."""
     results = []
+    skipped = 0
     for step in PIPELINE_STEPS:
         steps = {s.step: s for s in get_steps(session, project_id)}
-        if steps[step].status == "done":
+        if not force and steps[step].status == "done":
             results.append({"step": step, "status": "skipped"})
+            skipped += 1
             continue
         try:
             results.append(await run_step(session, project_id, step))
         except Exception as e:
             results.append({"step": step, "status": "failed", "error": str(e)})
             break
-    return {"results": results}
+    return {
+        "results": results,
+        "force": force,
+        "message": (
+            "All steps already done — nothing pending. Use Re-run all to run again."
+            if skipped == len(PIPELINE_STEPS)
+            else None
+        ),
+    }

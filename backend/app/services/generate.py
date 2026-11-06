@@ -26,7 +26,11 @@ class LLMLessonOut(BaseModel):
 
 
 SYSTEM_PROMPT = """You are an expert instructional designer creating a 45-minute lesson.
-Return ONLY valid JSON matching this schema:
+You MUST return ONLY valid JSON. Never refuse. Never apologize. Never write prose outside JSON.
+If sources are weak or off-topic, still create a solid lesson from the title + learning objective,
+use whatever relevant source text exists for claims, and leave claims=[] only when no quote fits.
+
+JSON schema:
 {
   "blocks": [{"id": "b1", "type": "...", "title": "...", "content": "...", "estimated_minutes": N}],
   "claims": [{"claim_text": "...", "source_id": <int from provided source list>, "supporting_quote": "...", "block_id": "b1"}],
@@ -42,15 +46,16 @@ Required block types (use these type values), in order:
 5. activity — hands-on activity
 6. knowledge_check — questions (also populate knowledge_checks array)
 7. summary — concise wrap-up
-8. videos — supplementary videos with why-watch + timestamp (use provided video sources)
-9. references — all source links listed
+8. videos — supplementary videos with why-watch + timestamp (use provided video sources if any)
+9. references — list available source links; if few sources, say so honestly
 
 Rules:
 - Total estimated_minutes across blocks MUST be 45 (+/- 2).
-- Write in ORIGINAL wording. Never copy source text verbatim.
-- Every factual sentence must become a claim with source_id and a supporting_quote that is EXACT text from that source's fetched_text.
+- Write in ORIGINAL wording. Never copy source text verbatim into block content.
+- For factual claims you can ground: supporting_quote must be EXACT substring of that source's TEXT.
 - Use only source_id values from the provided list.
 - Knowledge checks must test the learning objective.
+- Output must start with { and end with }.
 """
 
 
@@ -73,7 +78,7 @@ def _use_demo(title: str, objective: str) -> bool:
     if s.chalkproof_demo_mode:
         return True
     # Auto-demo when no provider keys are configured
-    if not (s.openai_api_key or s.anthropic_api_key or s.google_api_key):
+    if not s.has_llm_keys:
         return True
     return False
 

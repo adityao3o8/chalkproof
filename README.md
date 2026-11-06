@@ -103,7 +103,7 @@ Optional APIs improve research quality (all degrade gracefully if missing):
 | `TAVILY_API_KEY` | Preferred web search (else DuckDuckGo) |
 | `YOUTUBE_API_KEY` | YouTube search (else DDG site:youtube.com) |
 | `GOOGLE_BOOKS_API_KEY` | Extra book metadata |
-| `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `GOOGLE_API_KEY` | LLM providers |
+| `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `GOOGLE_API_KEY` / `XAI_API_KEY` / `GROQ_API_KEY` | LLM providers (xAI Grok + GroqCloud) |
 
 ---
 

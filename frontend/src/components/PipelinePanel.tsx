@@ -13,6 +13,7 @@ export default function PipelinePanel({
   const [steps, setSteps] = useState<any[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
 
   const load = useCallback(async () => {
     setSteps(await api.steps(projectId));
@@ -24,8 +25,14 @@ export default function PipelinePanel({
     return () => clearInterval(t);
   }, [load]);
 
+  const allDone = STEPS.every((name) => {
+    const s = steps.find((x) => x.step === name);
+    return s?.status === "done";
+  });
+
   async function run(step: string) {
     setError("");
+    setInfo("");
     setBusy(step);
     try {
       await api.runStep(projectId, step);
@@ -39,11 +46,17 @@ export default function PipelinePanel({
     }
   }
 
-  async function runAll() {
+  async function runAll(force = false) {
     setError("");
+    setInfo("");
+    if (!force && allDone) {
+      setInfo("All steps are already done — nothing pending. Use “Re-run all” to run again from research.");
+      return;
+    }
     setBusy("all");
     try {
-      await api.runAll(projectId);
+      const res = await api.runAll(projectId, force);
+      if (res?.message) setInfo(res.message);
       await load();
       onDone();
     } catch (e: any) {
@@ -58,11 +71,23 @@ export default function PipelinePanel({
     <div className="panel">
       <div className="row" style={{ justifyContent: "space-between" }}>
         <h2>Pipeline</h2>
-        <button onClick={runAll} disabled={!!busy}>
-          {busy === "all" ? "Running…" : "Run all pending"}
-        </button>
+        <div className="row">
+          <button onClick={() => runAll(false)} disabled={!!busy}>
+            {busy === "all" ? "Running…" : "Run all pending"}
+          </button>
+          <button className="secondary" onClick={() => runAll(true)} disabled={!!busy}>
+            Re-run all
+          </button>
+        </div>
       </div>
       <p>Each step is persisted and independently retryable. Failures do not erase earlier work.</p>
+      {allDone && !busy && (
+        <p style={{ color: "var(--ok)" }}>
+          Pipeline complete. “Run all pending” will do nothing until a step fails or you click <strong>Re-run all</strong>.
+          Per-step <strong>Run</strong> always re-executes that step alone.
+        </p>
+      )}
+      {info && <p>{info}</p>}
       {error && <p className="error">{error}</p>}
       <ul style={{ listStyle: "none", padding: 0 }}>
         {STEPS.map((name) => {

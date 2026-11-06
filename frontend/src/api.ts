@@ -33,7 +33,10 @@ export const api = {
   sources: (id: number) => req<any[]>(`/api/projects/${id}/sources`),
   runStep: (id: number, step: string) =>
     req<any>(`/api/projects/${id}/pipeline/${step}`, { method: "POST" }),
-  runAll: (id: number) => req<any>(`/api/projects/${id}/pipeline/run`, { method: "POST" }),
+  runAll: (id: number, force = false) =>
+    req<any>(`/api/projects/${id}/pipeline/run?force=${force ? "true" : "false"}`, {
+      method: "POST",
+    }),
   lesson: (id: number) => req<any>(`/api/projects/${id}/lesson`),
   saveLesson: (id: number, content: any, note?: string) =>
     req<any>(`/api/projects/${id}/lesson`, {

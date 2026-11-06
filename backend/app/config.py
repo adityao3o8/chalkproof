@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     anthropic_api_key: str = ""
     google_api_key: str = ""
+    xai_api_key: str = ""  # Grok via xAI (OpenAI-compatible)
+    groq_api_key: str = ""  # GroqCloud (OpenAI-compatible)
 
     generator_model: str = "openai:gpt-4o-mini"
     qc_model: str = "anthropic:claude-3-5-haiku-latest"
@@ -36,6 +38,16 @@ class Settings(BaseSettings):
     @property
     def cors_origin_list(self) -> List[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
+    @property
+    def has_llm_keys(self) -> bool:
+        return bool(
+            self.openai_api_key
+            or self.anthropic_api_key
+            or self.google_api_key
+            or self.xai_api_key
+            or self.groq_api_key
+        )
 
 
 @lru_cache

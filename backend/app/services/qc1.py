@@ -192,8 +192,7 @@ async def run_qc1(session: Session, project_id: int) -> QCReport:
     from app.config import get_settings
 
     settings = get_settings()
-    has_keys = bool(settings.openai_api_key or settings.anthropic_api_key or settings.google_api_key)
-    if settings.chalkproof_demo_mode or not has_keys:
+    if settings.chalkproof_demo_mode or not settings.has_llm_keys:
         llm_issues = []
         summary = (
             "Demo/programmatic QC1 only (no LLM keys). "

@@ -42,12 +42,21 @@ def _extract_json(text: str) -> str:
     return text
 
 
-async def _call_openai(model: str, system: str, user: str, timeout: float) -> str:
-    settings = get_settings()
-    if not settings.openai_api_key:
-        raise LLMError("OPENAI_API_KEY is not set")
+async def _call_openai_compatible(
+    *,
+    base_url: str,
+    api_key: str,
+    model: str,
+    system: str,
+    user: str,
+    timeout: float,
+    provider_label: str,
+) -> str:
+    """Shared path for OpenAI and OpenAI-compatible APIs (xAI/Grok, etc.)."""
+    if not api_key:
+        raise LLMError(f"{provider_label} API key is not set")
     headers = {
-        "Authorization": f"Bearer {settings.openai_api_key}",
+        "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
     }
     payload = {
@@ -61,15 +70,63 @@ async def _call_openai(model: str, system: str, user: str, timeout: float) -> st
     }
     async with httpx.AsyncClient(timeout=timeout) as client:
         resp = await client.post(
-            "https://api.openai.com/v1/chat/completions",
+            f"{base_url.rstrip('/')}/chat/completions",
             headers=headers,
             json=payload,
         )
         if resp.status_code == 429:
-            raise LLMError("OpenAI rate limit exceeded")
+            raise LLMError(f"{provider_label} rate limit exceeded")
+        if resp.status_code == 400:
+            # Groq json_validate_failed often includes failed_generation prose
+            body = resp.text[:800]
+            raise LLMError(
+                f"{provider_label} rejected output (likely non-JSON). "
+                f"Retrying may help. Details: {body}"
+            )
         resp.raise_for_status()
         data = resp.json()
         return data["choices"][0]["message"]["content"]
+
+
+async def _call_openai(model: str, system: str, user: str, timeout: float) -> str:
+    settings = get_settings()
+    return await _call_openai_compatible(
+        base_url="https://api.openai.com/v1",
+        api_key=settings.openai_api_key,
+        model=model,
+        system=system,
+        user=user,
+        timeout=timeout,
+        provider_label="OPENAI_API_KEY",
+    )
+
+
+async def _call_xai(model: str, system: str, user: str, timeout: float) -> str:
+    """Grok models via xAI's OpenAI-compatible API."""
+    settings = get_settings()
+    return await _call_openai_compatible(
+        base_url="https://api.x.ai/v1",
+        api_key=settings.xai_api_key,
+        model=model,
+        system=system,
+        user=user,
+        timeout=timeout,
+        provider_label="XAI_API_KEY",
+    )
+
+
+async def _call_groq(model: str, system: str, user: str, timeout: float) -> str:
+    """Llama/etc. via GroqCloud's OpenAI-compatible API."""
+    settings = get_settings()
+    return await _call_openai_compatible(
+        base_url="https://api.groq.com/openai/v1",
+        api_key=settings.groq_api_key,
+        model=model,
+        system=system,
+        user=user,
+        timeout=timeout,
+        provider_label="GROQ_API_KEY",
+    )
 
 
 async def _call_anthropic(model: str, system: str, user: str, timeout: float) -> str:
@@ -146,6 +203,10 @@ async def raw_completion(role: str, system: str, user: str) -> str:
     try:
         if provider == "openai":
             return await _call_openai(model, system, user, timeout)
+        if provider in ("xai", "grok"):
+            return await _call_xai(model, system, user, timeout)
+        if provider == "groq":
+            return await _call_groq(model, system, user, timeout)
         if provider == "anthropic":
             return await _call_anthropic(model, system, user, timeout)
         if provider in ("google", "gemini"):
@@ -187,7 +248,18 @@ async def json_completion(
             last_err = e
             feedback = str(e)
             logger.warning("LLM JSON attempt %s failed: %s", attempt + 1, e)
-        except LLMError:
+        except LLMError as e:
+            # Retry on provider JSON-mode rejections (common with Groq)
+            last_err = e
+            msg = str(e)
+            if "rejected output" in msg or "json_validate" in msg.lower() or "Failed to generate JSON" in msg:
+                feedback = (
+                    "Your previous reply was rejected because it was not valid JSON "
+                    "(or you refused). Reply with ONLY a JSON object matching the schema. "
+                    "Do not apologize or explain."
+                )
+                logger.warning("LLM provider JSON reject attempt %s: %s", attempt + 1, e)
+                continue
             raise
 
     raise LLMError(f"LLM returned invalid JSON after retries: {last_err}")
