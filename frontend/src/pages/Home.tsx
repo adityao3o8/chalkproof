@@ -29,23 +29,37 @@ export default function Home() {
   }
 
   return (
-    <div>
-      <h1>Create a lesson</h1>
-      <p>Enter a title and learning objective. Chalkproof will research, generate a 45-minute lesson, and run two independent QC audits.</p>
-      <form className="panel" onSubmit={onSubmit}>
+    <div className="home-shell">
+      <div>
+        <p className="home-brand">Chalkproof</p>
+        <p className="lede">
+          Turn a title and learning objective into a grounded 45-minute lesson —
+          researched, generated, and checked by two independent QC layers.
+        </p>
+      </div>
+      <form className="panel home-form" onSubmit={onSubmit}>
+        <h2>New lesson</h2>
         <label htmlFor="title">Lesson title</label>
-        <input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. HTTP Requests and Responses" />
+        <input
+          id="title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="e.g. HTTP Requests and Responses"
+          autoFocus
+        />
         <label htmlFor="objective">Learning objective</label>
         <textarea
           id="objective"
-          rows={3}
+          rows={4}
           value={objective}
           onChange={(e) => setObjective(e.target.value)}
           placeholder="e.g. Explain GET and POST methods and distinguish between 2xx, 4xx, and 5xx response status categories."
         />
         {error && <p className="error">{error}</p>}
-        <div className="row" style={{ marginTop: "1rem" }}>
-          <button type="submit" disabled={busy}>{busy ? "Creating…" : "Create project"}</button>
+        <div className="row" style={{ marginTop: "1.15rem" }}>
+          <button type="submit" disabled={busy}>
+            {busy ? "Creating…" : "Create project"}
+          </button>
         </div>
       </form>
     </div>

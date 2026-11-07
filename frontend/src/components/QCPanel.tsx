@@ -52,36 +52,62 @@ export default function QCPanel({
 
   return (
     <div className="panel">
-      <div className="row" style={{ justifyContent: "space-between" }}>
-        <div className="tabs">
-          <button className={layer === 1 ? "active" : ""} onClick={() => setLayer(1)}>Layer 1 — Factual</button>
-          <button className={layer === 2 ? "active" : ""} onClick={() => setLayer(2)}>Layer 2 — Instructional</button>
+      <div className="panel-header">
+        <div className="tabs" style={{ marginBottom: 0, borderBottom: "none" }}>
+          <button
+            type="button"
+            className={layer === 1 ? "active" : ""}
+            onClick={() => setLayer(1)}
+          >
+            Layer 1 — Factual
+          </button>
+          <button
+            type="button"
+            className={layer === 2 ? "active" : ""}
+            onClick={() => setLayer(2)}
+          >
+            Layer 2 — Instructional
+          </button>
         </div>
-        <button className="secondary" onClick={plant}>Plant error demo</button>
+        <button type="button" className="secondary" onClick={plant}>
+          Plant error demo
+        </button>
       </div>
       {error && <p className="error">{error}</p>}
       {report && (
         <>
-          <p><strong>Score:</strong> {report.score} — {report.summary}</p>
+          <p>
+            <strong>Score:</strong> {report.score} — {report.summary}
+          </p>
           {(report.issues || []).map((iss: any) => (
             <div className="issue" key={iss.id}>
               <div className="row">
                 <span className={`sev-${iss.severity}`}>{iss.severity}</span>
                 <strong>{iss.id}</strong>
-                <span>{iss.category}</span>
-                <span className="status">{iss.status}</span>
+                <span className="meta">{iss.category}</span>
+                <span className={`status ${iss.status}`}>{iss.status}</span>
               </div>
               <p>{iss.description}</p>
-              {iss.evidence && <p><em>Evidence:</em> {iss.evidence}</p>}
+              {iss.evidence && (
+                <p className="meta">
+                  Evidence: {iss.evidence}
+                </p>
+              )}
               {iss.status === "open" && (
-                <div className="row">
-                  <button className="secondary" onClick={() => showDiff(iss.id)}>Review / diff</button>
-                  <button onClick={() => act(iss.id, "accept")}>Accept</button>
-                  <button className="danger" onClick={() => act(iss.id, "reject")}>Reject</button>
+                <div className="row" style={{ marginTop: "0.5rem" }}>
+                  <button type="button" className="secondary" onClick={() => showDiff(iss.id)}>
+                    Review / diff
+                  </button>
+                  <button type="button" onClick={() => act(iss.id, "accept")}>
+                    Accept
+                  </button>
+                  <button type="button" className="danger" onClick={() => act(iss.id, "reject")}>
+                    Reject
+                  </button>
                 </div>
               )}
               {activeIssue === iss.id && diff && (
-                <div style={{ marginTop: "0.5rem" }}>
+                <div>
                   <div className="diff">
                     <div>
                       <strong>Before</strong>
@@ -89,13 +115,30 @@ export default function QCPanel({
                     </div>
                     <div>
                       <strong>Suggested / edit</strong>
-                      <textarea rows={8} value={editText} onChange={(e) => setEditText(e.target.value)} />
+                      <textarea
+                        rows={8}
+                        value={editText}
+                        onChange={(e) => setEditText(e.target.value)}
+                      />
                     </div>
                   </div>
                   <div className="row" style={{ marginTop: "0.5rem" }}>
-                    <button onClick={() => act(iss.id, "accept")}>Apply suggested</button>
-                    <button onClick={() => act(iss.id, "edit")}>Edit then apply</button>
-                    <button className="secondary" onClick={() => { setDiff(null); setActiveIssue(null); }}>Cancel</button>
+                    <button type="button" onClick={() => act(iss.id, "accept")}>
+                      Apply suggested
+                    </button>
+                    <button type="button" onClick={() => act(iss.id, "edit")}>
+                      Edit then apply
+                    </button>
+                    <button
+                      type="button"
+                      className="secondary"
+                      onClick={() => {
+                        setDiff(null);
+                        setActiveIssue(null);
+                      }}
+                    >
+                      Cancel
+                    </button>
                   </div>
                 </div>
               )}

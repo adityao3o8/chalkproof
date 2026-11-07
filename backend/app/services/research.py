@@ -119,11 +119,41 @@ CURATED_DOCS: list[dict[str, str]] = [
     {"title": "RFC 9111 HTTP Caching", "url": "https://www.rfc-editor.org/rfc/rfc9111.html", "keywords": "http caching cache-control"},
     {"title": "MDN: DNS", "url": "https://developer.mozilla.org/en-US/docs/Glossary/DNS", "keywords": "dns resolution domain"},
     # General / maths fallbacks
-    {"title": "Wikipedia: Mathematics", "url": "https://en.wikipedia.org/wiki/Mathematics", "keywords": "math maths mathematics algebra arithmetic"},
+    {"title": "Wikipedia: Mathematics", "url": "https://en.wikipedia.org/wiki/Mathematics", "keywords": "math maths mathematics algebra arithmetic theorem school teach"},
     {"title": "Wikipedia: Arithmetic", "url": "https://en.wikipedia.org/wiki/Arithmetic", "keywords": "math maths arithmetic numbers addition subtraction"},
     {"title": "Wikipedia: Algebra", "url": "https://en.wikipedia.org/wiki/Algebra", "keywords": "math maths algebra equation variable"},
-    {"title": "Wikipedia: Geometry", "url": "https://en.wikipedia.org/wiki/Geometry", "keywords": "math maths geometry shape angle"},
-    {"title": "Khan Academy: Math", "url": "https://www.khanacademy.org/math", "keywords": "math maths learn mathematics"},
+    {"title": "Wikipedia: Geometry", "url": "https://en.wikipedia.org/wiki/Geometry", "keywords": "math maths geometry shape angle triangle theorem"},
+    {"title": "Wikipedia: Pythagorean theorem", "url": "https://en.wikipedia.org/wiki/Pythagorean_theorem", "keywords": "pythagoras pythagorean phytoghoras phytagoras theorem right triangle hypotenuse a2 b2 c2"},
+    {"title": "Khan Academy: Pythagorean theorem", "url": "https://www.khanacademy.org/math/geometry/hs-geo-trig/hs-geo-pythagorean-theorem/a/pythagorean-theorem", "keywords": "pythagoras pythagorean phytoghoras theorem hypotenuse"},
+    {"title": "Khan Academy: Math", "url": "https://www.khanacademy.org/math", "keywords": "math maths learn mathematics school teach"},
+]
+
+# Common misspellings / aliases → Wikipedia page titles (seeded when search APIs fail)
+TOPIC_WIKI_SEEDS: list[tuple[tuple[str, ...], list[str]]] = [
+    (
+        ("pythag", "phytoghor", "phytagor", "a2+b2", "hypotenuse"),
+        ["Pythagorean_theorem", "Right_triangle", "Geometry"],
+    ),
+    (
+        ("fraction", "decimal"),
+        ["Fraction", "Decimal", "Rational_number"],
+    ),
+    (
+        ("photosynthesis",),
+        ["Photosynthesis", "Chloroplast"],
+    ),
+    (
+        ("dns", "domain name"),
+        ["Domain_Name_System"],
+    ),
+    (
+        ("http", "get", "post", "status code"),
+        [],  # handled by curated HTTP docs
+    ),
+    (
+        ("math", "maths", "algebra", "geometry", "arithmetic", "school"),
+        ["Mathematics", "Arithmetic", "Algebra", "Geometry"],
+    ),
 ]
 
 
@@ -208,10 +238,45 @@ def _curated_matches(query: str, max_results: int = 6) -> list[dict[str, Any]]:
     scored: list[tuple[int, dict[str, Any]]] = []
     for doc in CURATED_DOCS:
         score = sum(1 for kw in doc["keywords"].split() if kw in q)
+        # Also score partial token matches (handles "Phytoghoras" ≈ pythagoras keywords)
+        for kw in doc["keywords"].split():
+            if len(kw) >= 5 and (kw[:5] in q or any(kw[:5] in token for token in q.split())):
+                score += 1
         if score:
             scored.append((score, {"title": doc["title"], "url": doc["url"], "snippet": ""}))
     scored.sort(key=lambda x: -x[0])
     return [d for _, d in scored[:max_results]]
+
+
+def _wiki_seed_results(query: str) -> list[dict[str, Any]]:
+    """Deterministic Wikipedia URLs from topic aliases — last-resort research seeds."""
+    q = query.lower()
+    titles: list[str] = []
+    for needles, pages in TOPIC_WIKI_SEEDS:
+        if any(n in q for n in needles):
+            titles.extend(pages)
+    # Always try the raw title words as a wiki slug candidate
+    rough = re.sub(r"[^a-zA-Z0-9]+", "_", query.split(":")[0].strip()).strip("_")
+    if rough and len(rough) > 2:
+        titles.append(rough)
+    # Correct common Pythagorean misspelling explicitly
+    if "phytoghor" in q or "phytagor" in q or "pythag" in q:
+        titles = ["Pythagorean_theorem", "Right_triangle", "Geometry"] + titles
+
+    seen: set[str] = set()
+    out: list[dict[str, Any]] = []
+    for t in titles:
+        if not t or t in seen:
+            continue
+        seen.add(t)
+        out.append(
+            {
+                "title": t.replace("_", " "),
+                "url": f"https://en.wikipedia.org/wiki/{t}",
+                "snippet": "",
+            }
+        )
+    return out[:6]
 
 
 async def web_search(query: str, max_results: int = 8) -> list[dict[str, Any]]:
@@ -248,9 +313,15 @@ async def web_search(query: str, max_results: int = 8) -> list[dict[str, Any]]:
             results.append(c)
             seen.add(c["url"])
 
+    # Alias / misspelling seeds (e.g. Phytoghoras → Pythagorean theorem)
+    for seed in _wiki_seed_results(query):
+        if seed["url"] not in seen:
+            results.append(seed)
+            seen.add(seed["url"])
+
     if not results:
         raise RuntimeError(f"Web search failed ({'; '.join(errors) or 'no providers'})")
-    return results[: max(max_results, len(curated))]
+    return results[: max(max_results + 2, len(results))]
 
 
 async def fetch_page_text(url: str, timeout: float = 20.0) -> str:
@@ -391,7 +462,14 @@ async def search_youtube(query: str, max_results: int = 3) -> list[dict[str, Any
             "url": "https://www.youtube.com/watch?v=V6DOm4X9N5E",
             "video_id": "V6DOm4X9N5E",
             "snippet": "Overview of mathematics topics for beginners",
-            "keywords": "math maths mathematics algebra arithmetic",
+            "keywords": "math maths mathematics algebra arithmetic school teach",
+        },
+        {
+            "title": "Pythagorean Theorem",
+            "url": "https://www.youtube.com/watch?v=AA6Rfg_y1t0",
+            "video_id": "AA6Rfg_y1t0",
+            "snippet": "Visual proof and explanation of a²+b²=c²",
+            "keywords": "pythagoras pythagorean phytoghoras theorem hypotenuse",
         },
     ]
     q = query.lower()
@@ -489,6 +567,16 @@ async def run_research(session: Session, project_id: int, title: str, objective:
                 seen.add(r["url"])
     except Exception as e:
         notes.append(f"Web search partially failed: {e}")
+        # Absolute fallback: wiki seeds alone
+        for seed in _wiki_seed_results(query):
+            if seed["url"] not in {r["url"] for r in web_results}:
+                web_results.append(seed)
+
+    # If search returned URLs but nothing yet, still force wiki seeds
+    if not web_results:
+        web_results = _wiki_seed_results(query) or _curated_matches(query, 6)
+        if web_results:
+            notes.append("Used offline topic seeds because live search returned nothing.")
 
     saved = 0
     for r in web_results:
@@ -516,11 +604,12 @@ async def run_research(session: Session, project_id: int, title: str, objective:
     # Books — keep query short; avoid forcing networking for non-tech topics
     try:
         short = " ".join(title.split()[:6])
-        book_query = (
-            f"{short} computer networking"
-            if _is_web_tech_topic(query)
-            else f"{short} textbook introduction"
-        )
+        if _is_web_tech_topic(query):
+            book_query = f"{short} computer networking"
+        elif any(x in query.lower() for x in ("pythag", "phytoghor", "theorem", "geometry")):
+            book_query = "Pythagorean theorem geometry textbook"
+        else:
+            book_query = f"{short} textbook introduction"
         books = await search_books(book_query, limit=2)
         for b in books:
             text = b.get("snippet") or f"{b['title']} by {b.get('authors', '')}"

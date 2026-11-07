@@ -12,7 +12,7 @@ export default function App() {
           <Link to="/" className="brand">
             Chalkproof
           </Link>
-          <span className="tagline">Local AI Lesson Creation</span>
+          <span className="tagline">Local AI lesson studio</span>
         </header>
         <main>
           <Routes>

@@ -50,7 +50,9 @@ export default function PipelinePanel({
     setError("");
     setInfo("");
     if (!force && allDone) {
-      setInfo("All steps are already done — nothing pending. Use “Re-run all” to run again from research.");
+      setInfo(
+        "All steps are already done — nothing pending. Use “Re-run all” to run again from research."
+      );
       return;
     }
     setBusy("all");
@@ -69,39 +71,37 @@ export default function PipelinePanel({
 
   return (
     <div className="panel">
-      <div className="row" style={{ justifyContent: "space-between" }}>
+      <div className="panel-header">
         <h2>Pipeline</h2>
         <div className="row">
-          <button onClick={() => runAll(false)} disabled={!!busy}>
+          <button type="button" onClick={() => runAll(false)} disabled={!!busy}>
             {busy === "all" ? "Running…" : "Run all pending"}
           </button>
-          <button className="secondary" onClick={() => runAll(true)} disabled={!!busy}>
+          <button type="button" className="secondary" onClick={() => runAll(true)} disabled={!!busy}>
             Re-run all
           </button>
         </div>
       </div>
-      <p>Each step is persisted and independently retryable. Failures do not erase earlier work.</p>
+      <p className="lede" style={{ marginBottom: "0.5rem" }}>
+        Each step is persisted and independently retryable. Failures do not erase earlier work.
+      </p>
       {allDone && !busy && (
-        <p style={{ color: "var(--ok)" }}>
-          Pipeline complete. “Run all pending” will do nothing until a step fails or you click <strong>Re-run all</strong>.
-          Per-step <strong>Run</strong> always re-executes that step alone.
+        <p className="info-banner">
+          Pipeline complete. “Run all pending” skips finished steps — use <strong>Re-run all</strong>{" "}
+          to start over, or per-step <strong>Run</strong> to redo one stage.
         </p>
       )}
-      {info && <p>{info}</p>}
+      {info && <p className="info-banner">{info}</p>}
       {error && <p className="error">{error}</p>}
-      <ul style={{ listStyle: "none", padding: 0 }}>
+      <ul className="step-list">
         {STEPS.map((name) => {
           const s = steps.find((x) => x.step === name) || { status: "pending" };
           return (
-            <li key={name} className="row" style={{ padding: "0.5rem 0", borderBottom: "1px solid var(--line)" }}>
-              <strong style={{ width: 120 }}>{name}</strong>
+            <li key={name} className="step-row">
+              <strong>{name}</strong>
               <span className={`status ${s.status}`}>{s.status}</span>
-              {s.error && <span className="error" style={{ flex: 1 }}>{s.error}</span>}
-              <button
-                className="secondary"
-                disabled={!!busy}
-                onClick={() => run(name)}
-              >
+              <span className="step-error">{s.error || ""}</span>
+              <button type="button" className="secondary" disabled={!!busy} onClick={() => run(name)}>
                 {s.status === "failed" ? "Retry" : busy === name ? "Running…" : "Run"}
               </button>
             </li>

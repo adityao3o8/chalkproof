@@ -33,20 +33,29 @@ export default function VersionsPanel({
 
   return (
     <div className="panel">
-      <h2>Version history</h2>
-      <p>AI generation, QC applies, and manual saves each create a version. Instructor edits are never overwritten by regeneration.</p>
-      <ul style={{ listStyle: "none", padding: 0 }}>
+      <div className="panel-header">
+        <h2>Version history</h2>
+      </div>
+      <p className="lede">
+        AI generation, QC applies, and manual saves each create a version. Instructor edits are never
+        overwritten by regeneration.
+      </p>
+      <div>
         {versions.map((v) => (
-          <li key={v.id} className="row" style={{ padding: "0.4rem 0", borderBottom: "1px solid var(--line)" }}>
+          <div key={v.id} className="version-row">
             <strong>v{v.version}</strong>
             <span>{v.author}</span>
             <span>{v.note}</span>
-            <span>{v.total_estimated_minutes != null ? `${v.total_estimated_minutes} min` : ""}</span>
-            <span style={{ color: "var(--muted)" }}>{new Date(v.created_at).toLocaleString()}</span>
-            <button className="secondary" onClick={() => restore(v.id)}>Restore</button>
-          </li>
+            <span className="muted">
+              {v.total_estimated_minutes != null ? `${v.total_estimated_minutes} min` : ""}
+            </span>
+            <span className="muted">{new Date(v.created_at).toLocaleString()}</span>
+            <button type="button" className="secondary" onClick={() => restore(v.id)}>
+              Restore
+            </button>
+          </div>
         ))}
-      </ul>
+      </div>
     </div>
   );
 }

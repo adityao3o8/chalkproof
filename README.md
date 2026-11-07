@@ -184,11 +184,8 @@ pytest -q
 - React, Vite, react-router-dom
 - pytest
 
-**AI assistants**
-
-- Cursor AI assistant (Composer) — used to scaffold and implement this repository
-
 ---
+
 
 ## Repo layout
 

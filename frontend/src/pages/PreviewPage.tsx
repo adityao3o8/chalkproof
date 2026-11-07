@@ -13,28 +13,38 @@ export default function PreviewPage() {
   }, [projectId]);
 
   if (error) return <p className="error">{error}</p>;
-  if (!data) return <p>Loading preview…</p>;
+  if (!data) return <p className="lede">Loading preview…</p>;
   const c = data.content;
 
   return (
     <div>
-      <div className="row" style={{ justifyContent: "space-between" }}>
+      <div className="preview-toolbar">
         <Link to={`/projects/${projectId}`}>← Back to project</Link>
         <div className="row">
-          <a className="btn secondary" href={api.exportUrl(projectId, "lesson.md")}>lesson.md</a>
-          <a className="btn secondary" href={api.exportUrl(projectId, "lesson.html")}>lesson.html</a>
-          <a className="btn" href={api.exportUrl(projectId, "zip")}>ZIP</a>
+          <a className="btn secondary" href={api.exportUrl(projectId, "lesson.md")}>
+            lesson.md
+          </a>
+          <a className="btn secondary" href={api.exportUrl(projectId, "lesson.html")}>
+            lesson.html
+          </a>
+          <a className="btn" href={api.exportUrl(projectId, "zip")}>
+            ZIP
+          </a>
         </div>
       </div>
-      <article className="panel">
+      <article className="preview-doc">
         <h1>{c.title}</h1>
-        <p><strong>Learning objective:</strong> {c.objective}</p>
+        <p>
+          <strong>Learning objective:</strong> {c.objective}
+        </p>
         <p className="meta">Estimated time: {c.total_estimated_minutes} minutes</p>
         {c.blocks.map((b: any) => (
           <section className="preview-block" key={b.id}>
             <h2>{b.title}</h2>
-            <p className="meta">{b.type} · {b.estimated_minutes} min</p>
-            <div style={{ whiteSpace: "pre-wrap" }}>{b.content}</div>
+            <p className="meta">
+              {b.type} · {b.estimated_minutes} min
+            </p>
+            <div className="preview-body">{b.content}</div>
           </section>
         ))}
       </article>

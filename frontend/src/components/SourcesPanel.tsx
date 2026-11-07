@@ -13,39 +13,49 @@ export default function SourcesPanel({ projectId }: { projectId: number }) {
 
   return (
     <div className="panel">
-      <h2>Sources</h2>
-      {!sources.length && <p>No sources yet — run research.</p>}
-      <table style={{ width: "100%", borderCollapse: "collapse" }}>
-        <thead>
-          <tr>
-            <th align="left">Type</th>
-            <th align="left">Tier</th>
-            <th align="left">Title</th>
-            <th align="left">Claims</th>
-            <th align="left">Notes</th>
-          </tr>
-        </thead>
-        <tbody>
-          {sources.map((s) => (
-            <tr key={s.id} style={{ borderTop: "1px solid var(--line)" }}>
-              <td>{s.type}</td>
-              <td>{s.reliability_tier}</td>
-              <td>
-                <a href={s.url} target="_blank" rel="noreferrer">{s.title || s.url}</a>
-              </td>
-              <td>{s.claim_count}</td>
-              <td>
-                {s.type === "video" && (
-                  <>
-                    {s.relevant_segment || "—"}{" "}
-                    {!s.video_verified && <em>(unverified — no transcript)</em>}
-                  </>
-                )}
-              </td>
+      <div className="panel-header">
+        <h2>Sources</h2>
+      </div>
+      {!sources.length && <p className="lede">No sources yet — run research.</p>}
+      {!!sources.length && (
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Tier</th>
+              <th>Title</th>
+              <th>Claims</th>
+              <th>Notes</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {sources.map((s) => (
+              <tr key={s.id}>
+                <td>{s.type}</td>
+                <td>
+                  <span className={`status ${s.reliability_tier === "high" ? "done" : ""}`}>
+                    {s.reliability_tier}
+                  </span>
+                </td>
+                <td>
+                  <a href={s.url} target="_blank" rel="noreferrer">
+                    {s.title || s.url}
+                  </a>
+                </td>
+                <td>{s.claim_count}</td>
+                <td className="meta">
+                  {s.type === "video" && (
+                    <>
+                      {s.relevant_segment || "—"}{" "}
+                      {!s.video_verified && <em>(unverified — no transcript)</em>}
+                    </>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </div>
   );
 }

@@ -28,30 +28,41 @@ export default function ProjectPage() {
   }, [refresh]);
 
   if (!project) {
-    return <p>{error || "Loading…"}</p>;
+    return <p className="lede">{error || "Loading project…"}</p>;
   }
 
   return (
     <div>
-      <div className="row" style={{ justifyContent: "space-between" }}>
+      <header className="project-header">
         <div>
           <h1>{project.title}</h1>
-          <p><strong>Objective:</strong> {project.objective}</p>
-          <p>Status: <span className={`status ${project.status}`}>{project.status}</span></p>
+          <p className="objective">
+            <strong>Objective:</strong> {project.objective}
+          </p>
+          <span className={`status ${project.status}`}>{project.status}</span>
         </div>
-        <div className="row">
-          <Link className="btn secondary" to={`/projects/${projectId}/preview`}>Preview</Link>
-          <a className="btn" href={api.exportUrl(projectId, "zip")}>Export ZIP</a>
+        <div className="row project-actions">
+          <Link className="btn secondary" to={`/projects/${projectId}/preview`}>
+            Preview
+          </Link>
+          <a className="btn" href={api.exportUrl(projectId, "zip")}>
+            Export ZIP
+          </a>
         </div>
-      </div>
+      </header>
 
-      <div className="tabs">
+      <nav className="tabs" aria-label="Project sections">
         {(["pipeline", "editor", "sources", "qc", "versions"] as const).map((t) => (
-          <button key={t} className={tab === t ? "active" : ""} onClick={() => setTab(t)}>
+          <button
+            key={t}
+            type="button"
+            className={tab === t ? "active" : ""}
+            onClick={() => setTab(t)}
+          >
             {t}
           </button>
         ))}
-      </div>
+      </nav>
 
       {tab === "pipeline" && (
         <PipelinePanel
@@ -62,9 +73,7 @@ export default function ProjectPage() {
           }}
         />
       )}
-      {tab === "editor" && (
-        <LessonEditor projectId={projectId} refreshKey={lessonTick} />
-      )}
+      {tab === "editor" && <LessonEditor projectId={projectId} refreshKey={lessonTick} />}
       {tab === "sources" && <SourcesPanel projectId={projectId} />}
       {tab === "qc" && (
         <QCPanel

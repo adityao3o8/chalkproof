@@ -74,31 +74,31 @@ export default function LessonEditor({
 
   return (
     <div className="panel">
-      <div className="row" style={{ justifyContent: "space-between" }}>
+      <div className="panel-header">
         <h2>Lesson editor</h2>
         <div className="row">
           <span className={`meter ${within ? "ok" : "warn"}`}>
-            {minutes.total} / 45 min {within ? "✓" : "(off target — adjust blocks)"}
+            {minutes.total} / 45 min {within ? "on target" : "off target — adjust blocks"}
           </span>
-          <button onClick={() => save(content)} disabled={saving}>
+          <button type="button" onClick={() => save(content)} disabled={saving}>
             {saving ? "Saving…" : "Save now"}
           </button>
         </div>
       </div>
-      {msg && <p>{msg}</p>}
+      {msg && <p className="info-banner">{msg}</p>}
       {content.blocks.map((b: any, i: number) => (
         <div className="block-editor" key={b.id}>
-          <div className="row">
-            <strong>{b.type}</strong>
+          <div className="row" style={{ marginBottom: "0.5rem" }}>
+            <span className="block-type">{b.type}</span>
             <input
-              style={{ maxWidth: 320 }}
+              style={{ maxWidth: 360, flex: 1 }}
               value={b.title}
               onChange={(e) => updateBlock(i, { title: e.target.value })}
             />
-            <label style={{ margin: 0 }}>
+            <label style={{ margin: 0, display: "flex", alignItems: "center", gap: 6 }}>
               min
               <input
-                style={{ width: 70, marginLeft: 6 }}
+                style={{ width: 72 }}
                 type="number"
                 step="0.5"
                 value={b.estimated_minutes}
