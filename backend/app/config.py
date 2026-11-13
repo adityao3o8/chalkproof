@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     google_books_api_key: str = ""
 
     database_url: str = "sqlite:///./chalkproof.db"
+    # Comma-separated; use * on Vercel if needed
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
 
     # When true (or when no LLM keys are set), generation uses a local fixture lesson.

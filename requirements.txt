@@ -1,0 +1,20 @@
+# Root requirements for Vercel Python serverless (mirrors backend/)
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+sqlmodel==0.0.22
+pydantic==2.10.4
+pydantic-settings==2.7.0
+httpx==0.28.1
+python-dotenv==1.0.1
+openai==1.58.1
+anthropic==0.42.0
+trafilatura==2.0.0
+duckduckgo-search==7.2.1
+tavily-python==0.5.0
+youtube-transcript-api==0.6.3
+google-api-python-client==2.156.0
+python-multipart==0.0.20
+rapidfuzz==3.11.0
+tenacity==9.0.0
+beautifulsoup4==4.12.3
+lxml_html_clean==0.4.1

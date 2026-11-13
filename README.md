@@ -53,7 +53,26 @@ backend/ (FastAPI + SQLModel/SQLite)
 
 ---
 
-## Setup
+## Deploy on Vercel
+
+The Vite frontend and FastAPI backend can run on Vercel (Python serverless for `/api/*`).
+
+```bash
+npm i -g vercel   # if needed
+vercel link       # link to your Vercel project
+vercel env add GROQ_API_KEY
+vercel env add GENERATOR_MODEL
+vercel env add QC_MODEL
+# Optional: TAVILY_API_KEY, etc.
+vercel --prod
+```
+
+**Limits to know:**
+- SQLite uses `/tmp` on Vercel — data is **ephemeral** (resets on cold starts). Fine for demos, not for durable storage.
+- Pipeline steps (research/generate/QC) can take minutes; Hobby plans may hit function timeouts. Pro (`maxDuration` 300s) works better.
+- Set `GENERATOR_MODEL` / `QC_MODEL` / `GROQ_API_KEY` in the Vercel project env.
+
+Local two-command run is still the recommended full experience.
 
 ### 1. Environment
 
