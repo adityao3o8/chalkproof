@@ -126,6 +126,14 @@ CURATED_DOCS: list[dict[str, str]] = [
     {"title": "Wikipedia: Pythagorean theorem", "url": "https://en.wikipedia.org/wiki/Pythagorean_theorem", "keywords": "pythagoras pythagorean phytoghoras phytagoras theorem right triangle hypotenuse a2 b2 c2"},
     {"title": "Khan Academy: Pythagorean theorem", "url": "https://www.khanacademy.org/math/geometry/hs-geo-trig/hs-geo-pythagorean-theorem/a/pythagorean-theorem", "keywords": "pythagoras pythagorean phytoghoras theorem hypotenuse"},
     {"title": "Khan Academy: Math", "url": "https://www.khanacademy.org/math", "keywords": "math maths learn mathematics school teach"},
+    # React / frontend
+    {"title": "React docs: Learn React", "url": "https://react.dev/learn", "keywords": "react frontend front-end component hook jsx function"},
+    {"title": "React docs: Your first component", "url": "https://react.dev/learn/your-first-component", "keywords": "react component function frontend"},
+    {"title": "React docs: Responding to events", "url": "https://react.dev/learn/responding-to-events", "keywords": "react function event handler frontend"},
+    {"title": "React docs: State: a component's memory", "url": "https://react.dev/learn/state-a-components-memory", "keywords": "react state hook usestate function"},
+    {"title": "MDN: JavaScript guide", "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide", "keywords": "javascript js frontend function"},
+    {"title": "MDN: Functions", "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Functions", "keywords": "javascript function functions frontend react"},
+    {"title": "Wikipedia: React (software)", "url": "https://en.wikipedia.org/wiki/React_(software)", "keywords": "react frontend library component"},
 ]
 
 # Common misspellings / aliases → Wikipedia page titles (seeded when search APIs fail)
@@ -151,6 +159,14 @@ TOPIC_WIKI_SEEDS: list[tuple[tuple[str, ...], list[str]]] = [
         [],  # handled by curated HTTP docs
     ),
     (
+        ("react", "jsx", "frontend", "front-end", "component"),
+        ["React_(software)", "JavaScript", "Document_Object_Model"],
+    ),
+    (
+        ("javascript", "js function", "dom"),
+        ["JavaScript", "Document_Object_Model", "ECMAScript"],
+    ),
+    (
         ("math", "maths", "algebra", "geometry", "arithmetic", "school"),
         ["Mathematics", "Arithmetic", "Algebra", "Geometry"],
     ),
@@ -159,7 +175,11 @@ TOPIC_WIKI_SEEDS: list[tuple[tuple[str, ...], list[str]]] = [
 
 def _is_web_tech_topic(query: str) -> bool:
     q = query.lower()
-    tech = ("http", "https", "api", "dns", "cache", "html", "css", "javascript", "tcp", "rest", "header", "status code")
+    tech = (
+        "http", "https", "api", "dns", "cache", "html", "css", "javascript",
+        "tcp", "rest", "header", "status code", "react", "frontend", "front-end",
+        "jsx", "dom", "component",
+    )
     return any(t in q for t in tech)
 
 
@@ -471,6 +491,13 @@ async def search_youtube(query: str, max_results: int = 3) -> list[dict[str, Any
             "snippet": "Visual proof and explanation of a²+b²=c²",
             "keywords": "pythagoras pythagorean phytoghoras theorem hypotenuse",
         },
+        {
+            "title": "React in 100 Seconds",
+            "url": "https://www.youtube.com/watch?v=Tn6-PIqc4UM",
+            "video_id": "Tn6-PIqc4UM",
+            "snippet": "Quick overview of React components and UI rendering",
+            "keywords": "react frontend component jsx function",
+        },
     ]
     q = query.lower()
     for v in fallback_videos:
@@ -679,7 +706,37 @@ async def run_research(session: Session, project_id: int, title: str, objective:
 
     session.commit()
     sources = session.exec(select(Source).where(Source.project_id == project_id)).all()
-    if len(sources) < 2:
+
+    # Last resort: force-fetch curated / wiki seeds until we have at least 3
+    if len(sources) < 3:
+        notes.append(
+            f"Only {len(sources)} sources after primary research; injecting topic seed pages."
+        )
+        existing = {s.url for s in sources}
+        emergency = _curated_matches(query, 8) + _wiki_seed_results(query)
+        for r in emergency:
+            if len(sources) >= 5:
+                break
+            if r["url"] in existing:
+                continue
+            text = await fetch_page_text(r["url"])
+            if not text:
+                text = r.get("snippet") or f"Reference page: {r.get('title', '')} ({r['url']})"
+            src = Source(
+                project_id=project_id,
+                type="web",
+                url=r["url"],
+                title=(r.get("title") or r["url"])[:300],
+                fetched_text=text,
+                reliability_tier=assign_reliability(r["url"], r.get("title", "")),
+            )
+            session.add(src)
+            existing.add(r["url"])
+            sources = list(sources) + [src]
+        session.commit()
+        sources = session.exec(select(Source).where(Source.project_id == project_id)).all()
+
+    if len(sources) < 1:
         raise RuntimeError(
             f"Too few sources gathered ({len(sources)}). Check network/API keys and retry."
         )
