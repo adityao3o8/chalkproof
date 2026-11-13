@@ -1,18 +1,32 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api } from "../api";
+import { downloadLessonFile, exportProjectZip } from "../exportClient";
 
 export default function PreviewPage() {
   const { id } = useParams();
   const projectId = Number(id);
   const [data, setData] = useState<any>(null);
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState("");
 
   useEffect(() => {
     api.lesson(projectId).then(setData).catch((e) => setError(e.message));
   }, [projectId]);
 
-  if (error) return <p className="error">{error}</p>;
+  async function onZip() {
+    setBusy("zip");
+    setError("");
+    try {
+      await exportProjectZip(projectId, data?.content);
+    } catch (e: any) {
+      setError(e.message || "Export failed");
+    } finally {
+      setBusy("");
+    }
+  }
+
+  if (error && !data) return <p className="error">{error}</p>;
   if (!data) return <p className="lede">Loading preview…</p>;
   const c = data.content;
 
@@ -21,17 +35,26 @@ export default function PreviewPage() {
       <div className="preview-toolbar">
         <Link to={`/projects/${projectId}`}>← Back to project</Link>
         <div className="row">
-          <a className="btn secondary" href={api.exportUrl(projectId, "lesson.md")}>
+          <button
+            type="button"
+            className="btn secondary"
+            onClick={() => downloadLessonFile(c, "md")}
+          >
             lesson.md
-          </a>
-          <a className="btn secondary" href={api.exportUrl(projectId, "lesson.html")}>
+          </button>
+          <button
+            type="button"
+            className="btn secondary"
+            onClick={() => downloadLessonFile(c, "html")}
+          >
             lesson.html
-          </a>
-          <a className="btn" href={api.exportUrl(projectId, "zip")}>
-            ZIP
-          </a>
+          </button>
+          <button type="button" className="btn" onClick={onZip} disabled={!!busy}>
+            {busy === "zip" ? "Exporting…" : "ZIP"}
+          </button>
         </div>
       </div>
+      {error && <p className="error">{error}</p>}
       <article className="preview-doc">
         <h1>{c.title}</h1>
         <p>

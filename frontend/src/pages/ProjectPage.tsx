@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api } from "../api";
+import { exportProjectZip } from "../exportClient";
 import PipelinePanel from "../components/PipelinePanel";
 import LessonEditor from "../components/LessonEditor";
 import SourcesPanel from "../components/SourcesPanel";
@@ -13,7 +14,21 @@ export default function ProjectPage() {
   const [project, setProject] = useState<any>(null);
   const [tab, setTab] = useState<"pipeline" | "editor" | "sources" | "qc" | "versions">("pipeline");
   const [error, setError] = useState("");
+  const [exportError, setExportError] = useState("");
+  const [exporting, setExporting] = useState(false);
   const [lessonTick, setLessonTick] = useState(0);
+
+  async function onExportZip() {
+    setExportError("");
+    setExporting(true);
+    try {
+      await exportProjectZip(projectId);
+    } catch (e: any) {
+      setExportError(e.message || "Export failed");
+    } finally {
+      setExporting(false);
+    }
+  }
 
   const refresh = useCallback(async () => {
     try {
@@ -45,11 +60,12 @@ export default function ProjectPage() {
           <Link className="btn secondary" to={`/projects/${projectId}/preview`}>
             Preview
           </Link>
-          <a className="btn" href={api.exportUrl(projectId, "zip")}>
-            Export ZIP
-          </a>
+          <button type="button" className="btn" onClick={onExportZip} disabled={exporting}>
+            {exporting ? "Exporting…" : "Export ZIP"}
+          </button>
         </div>
       </header>
+      {exportError && <p className="error">{exportError}</p>}
 
       <nav className="tabs" aria-label="Project sections">
         {(["pipeline", "editor", "sources", "qc", "versions"] as const).map((t) => (
