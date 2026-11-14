@@ -4,7 +4,8 @@
   "installCommand": "cd frontend && npm install",
   "framework": null,
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/index" }
+    { "source": "/api/(.*)", "destination": "/api/index" },
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
   ],
   "functions": {
     "api/index.py": {
