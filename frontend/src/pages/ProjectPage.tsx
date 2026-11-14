@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api } from "../api";
-import { exportProjectZip } from "../exportClient";
+import { exportProjectPdf, exportProjectZip } from "../exportClient";
 import PipelinePanel from "../components/PipelinePanel";
 import LessonEditor from "../components/LessonEditor";
 import SourcesPanel from "../components/SourcesPanel";
@@ -15,18 +15,30 @@ export default function ProjectPage() {
   const [tab, setTab] = useState<"pipeline" | "editor" | "sources" | "qc" | "versions">("pipeline");
   const [error, setError] = useState("");
   const [exportError, setExportError] = useState("");
-  const [exporting, setExporting] = useState(false);
+  const [exporting, setExporting] = useState<"zip" | "pdf" | "">("");
   const [lessonTick, setLessonTick] = useState(0);
 
   async function onExportZip() {
     setExportError("");
-    setExporting(true);
+    setExporting("zip");
     try {
       await exportProjectZip(projectId);
     } catch (e: any) {
       setExportError(e.message || "Export failed");
     } finally {
-      setExporting(false);
+      setExporting("");
+    }
+  }
+
+  async function onExportPdf() {
+    setExportError("");
+    setExporting("pdf");
+    try {
+      await exportProjectPdf(projectId);
+    } catch (e: any) {
+      setExportError(e.message || "PDF export failed");
+    } finally {
+      setExporting("");
     }
   }
 
@@ -60,8 +72,16 @@ export default function ProjectPage() {
           <Link className="btn secondary" to={`/projects/${projectId}/preview`}>
             Preview
           </Link>
-          <button type="button" className="btn" onClick={onExportZip} disabled={exporting}>
-            {exporting ? "Exporting…" : "Export ZIP"}
+          <button
+            type="button"
+            className="btn secondary"
+            onClick={onExportPdf}
+            disabled={!!exporting}
+          >
+            {exporting === "pdf" ? "PDF…" : "Export PDF"}
+          </button>
+          <button type="button" className="btn" onClick={onExportZip} disabled={!!exporting}>
+            {exporting === "zip" ? "Exporting…" : "Export ZIP"}
           </button>
         </div>
       </header>

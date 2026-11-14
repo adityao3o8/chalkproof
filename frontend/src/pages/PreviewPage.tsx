@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api } from "../api";
-import { downloadLessonFile, exportProjectZip } from "../exportClient";
+import { downloadLessonFile, downloadLessonPdf, exportProjectZip } from "../exportClient";
 
 export default function PreviewPage() {
   const { id } = useParams();
@@ -21,6 +21,18 @@ export default function PreviewPage() {
       await exportProjectZip(projectId, data?.content);
     } catch (e: any) {
       setError(e.message || "Export failed");
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function onPdf() {
+    setBusy("pdf");
+    setError("");
+    try {
+      await downloadLessonPdf(data.content, `chalkproof_${projectId}.pdf`);
+    } catch (e: any) {
+      setError(e.message || "PDF export failed");
     } finally {
       setBusy("");
     }
@@ -48,6 +60,9 @@ export default function PreviewPage() {
             onClick={() => downloadLessonFile(c, "html")}
           >
             lesson.html
+          </button>
+          <button type="button" className="btn secondary" onClick={onPdf} disabled={!!busy}>
+            {busy === "pdf" ? "PDF…" : "PDF"}
           </button>
           <button type="button" className="btn" onClick={onZip} disabled={!!busy}>
             {busy === "zip" ? "Exporting…" : "ZIP"}

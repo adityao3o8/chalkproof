@@ -1,6 +1,7 @@
 /** Client-side lesson export — avoids Vercel /tmp SQLite cold-start 404s. */
 
 import { api } from "./api";
+import type { jsPDF as JsPdfType } from "jspdf";
 
 type LessonContent = {
   title: string;
@@ -271,4 +272,113 @@ export function downloadLessonFile(content: LessonContent, kind: "md" | "html") 
   const mime = kind === "md" ? "text/markdown" : "text/html";
   const name = kind === "md" ? "lesson.md" : "lesson.html";
   downloadBlob(new Blob([text], { type: mime }), name);
+}
+
+function wrapLines(doc: JsPdfType, text: string, maxWidth: number): string[] {
+  const out: string[] = [];
+  for (const paragraph of text.split("\n")) {
+    if (!paragraph.trim()) {
+      out.push("");
+      continue;
+    }
+    const wrapped = doc.splitTextToSize(paragraph, maxWidth) as string[];
+    out.push(...wrapped);
+  }
+  return out;
+}
+
+/** Build and download a printable lesson PDF (jsPDF loaded on demand). */
+export async function downloadLessonPdf(content: LessonContent, filename = "lesson.pdf") {
+  const { jsPDF } = await import("jspdf");
+  const doc = new jsPDF({ unit: "pt", format: "a4" });
+  const margin = 54;
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const maxW = pageW - margin * 2;
+  let y = margin;
+
+  const ensureSpace = (needed: number) => {
+    if (y + needed > pageH - margin) {
+      doc.addPage();
+      y = margin;
+    }
+  };
+
+  const writeBlock = (
+    lines: string[],
+    opts: { size?: number; style?: "normal" | "bold"; gap?: number } = {},
+  ) => {
+    const size = opts.size ?? 11;
+    const style = opts.style ?? "normal";
+    const gap = opts.gap ?? 4;
+    doc.setFont("helvetica", style);
+    doc.setFontSize(size);
+    const lineH = size * 1.35;
+    for (const line of lines) {
+      ensureSpace(lineH);
+      if (line === "") {
+        y += lineH * 0.45;
+        continue;
+      }
+      doc.text(line, margin, y);
+      y += lineH;
+    }
+    y += gap;
+  };
+
+  writeBlock(wrapLines(doc, content.title, maxW), { size: 18, style: "bold", gap: 10 });
+  writeBlock(wrapLines(doc, `Learning objective: ${content.objective}`, maxW), {
+    size: 11,
+    style: "normal",
+    gap: 4,
+  });
+  writeBlock([`Estimated time: ${content.total_estimated_minutes} minutes`], {
+    size: 10,
+    style: "normal",
+    gap: 14,
+  });
+
+  for (const b of content.blocks) {
+    writeBlock(wrapLines(doc, b.title, maxW), { size: 14, style: "bold", gap: 2 });
+    writeBlock([`${b.type} · ${b.estimated_minutes} min`], { size: 9, style: "normal", gap: 6 });
+    writeBlock(wrapLines(doc, b.content, maxW), { size: 11, style: "normal", gap: 16 });
+  }
+
+  if (content.knowledge_checks?.length) {
+    writeBlock(["Knowledge Check Answer Key"], { size: 14, style: "bold", gap: 8 });
+    content.knowledge_checks.forEach((k, i) => {
+      writeBlock(wrapLines(doc, `Q${i + 1}. ${k.question}`, maxW), {
+        size: 11,
+        style: "bold",
+        gap: 2,
+      });
+      writeBlock(wrapLines(doc, `Answer: ${k.answer}`, maxW), { size: 10, gap: 2 });
+      writeBlock(wrapLines(doc, `Explanation: ${k.explanation}`, maxW), { size: 10, gap: 10 });
+    });
+  }
+
+  const pageCount = doc.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(120);
+    doc.text(`Chalkproof · ${i} / ${pageCount}`, pageW / 2, pageH - 24, { align: "center" });
+    doc.setTextColor(0);
+  }
+
+  doc.save(filename);
+}
+
+export async function exportProjectPdf(
+  projectId: number,
+  preloaded?: LessonContent,
+): Promise<void> {
+  let content = preloaded;
+  if (!content) {
+    const lesson = await api.lesson(projectId);
+    content = lesson?.content;
+  }
+  if (!content) throw new Error("No lesson to export yet — run Generate first.");
+  await downloadLessonPdf(content, `chalkproof_${projectId}.pdf`);
 }

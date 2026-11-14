@@ -32,7 +32,7 @@ Title + Objective
    └─┬──┘  (never sees QC2)       └─┬──┘  (never sees QC1)
      └──────────┬───────────────────┘
                 ▼
-        Editor / Preview / Export ZIP
+        Editor / Preview / Export PDF · ZIP
 ```
 
 Each pipeline step is its own API endpoint, persisted in SQLite, and **individually retryable**. Instructor edits create new `LessonVersion` rows and are never overwritten by regeneration.
@@ -67,6 +67,7 @@ If the LLM is rate-limited, QC still returns partial programmatic checks instead
 |---|---|
 | **Status** | `created` → in progress → `ready` when finished; `failed` if a step failed (other steps kept) |
 | **Preview** | Read-only rendered lesson |
+| **Export PDF** | Downloads a printable lesson PDF (title, objective, blocks, answer key) |
 | **Export ZIP** | Downloads `lesson.md`, `lesson.html`, `references.json`, both QC reports |
 
 ### Pipeline tab
@@ -123,7 +124,7 @@ If the LLM is rate-limited, QC still returns partial programmatic checks instead
 4. **Sources** — tiers and evidence  
 5. **Editor** — 45-min meter + versioned saves  
 6. **QC** — Layer 1 then Layer 2; Accept/Reject one issue; optional Plant error  
-7. **Preview + Export ZIP**
+7. **Preview + Export PDF / ZIP**
 
 **If a live LLM call fails:** open a finished project’s Preview and explain retries/versioning — that still demonstrates the product.
 
@@ -226,7 +227,7 @@ vercel --prod
 3. Failed steps → **Retry** (completed steps stay done)  
 4. Edit in **editor**; watch minutes vs 45  
 5. **qc** → Accept / Reject / Review diff  
-6. **Preview** + **Export ZIP**  
+6. **Preview** + **Export PDF** / **Export ZIP**  
 7. Optional: **Plant error demo** → re-run QC1  
 
 ### Samples
