@@ -1,12 +1,25 @@
 import { useEffect, useState } from "react";
 import { api } from "../api";
+import { getSnapshot, upsertSnapshot } from "../localCache";
 
 export default function SourcesPanel({ projectId }: { projectId: number }) {
   const [sources, setSources] = useState<any[]>([]);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    api.sources(projectId).then(setSources).catch((e) => setError(e.message));
+    api
+      .sources(projectId)
+      .then((s) => {
+        setSources(s);
+        upsertSnapshot(projectId, { sources: s });
+      })
+      .catch((e) => {
+        const cached = getSnapshot(projectId)?.sources;
+        if (cached?.length) {
+          setSources(cached);
+          setError("");
+        } else setError(e.message);
+      });
   }, [projectId]);
 
   if (error) return <p className="error">{error}</p>;

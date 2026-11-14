@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { api } from "../api";
 import { exportProjectPdf, exportProjectZip } from "../exportClient";
+import {
+  getSnapshot,
+  restoreProjectToServer,
+  upsertSnapshot,
+} from "../localCache";
 import PipelinePanel from "../components/PipelinePanel";
 import LessonEditor from "../components/LessonEditor";
 import SourcesPanel from "../components/SourcesPanel";
@@ -11,12 +16,15 @@ import VersionsPanel from "../components/VersionsPanel";
 export default function ProjectPage() {
   const { id } = useParams();
   const projectId = Number(id);
+  const nav = useNavigate();
   const [project, setProject] = useState<any>(null);
   const [tab, setTab] = useState<"pipeline" | "editor" | "sources" | "qc" | "versions">("pipeline");
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [exportError, setExportError] = useState("");
   const [exporting, setExporting] = useState<"zip" | "pdf" | "">("");
   const [lessonTick, setLessonTick] = useState(0);
+  const [cacheOnly, setCacheOnly] = useState(false);
 
   async function onExportZip() {
     setExportError("");
@@ -43,23 +51,85 @@ export default function ProjectPage() {
   }
 
   const refresh = useCallback(async () => {
+    setError("");
     try {
-      setProject(await api.getProject(projectId));
+      const p = await api.getProject(projectId);
+      setProject(p);
+      setCacheOnly(false);
+      upsertSnapshot(projectId, {
+        title: p.title,
+        objective: p.objective,
+        status: p.status,
+      });
+      // Keep lesson snapshot fresh when server is up
+      try {
+        const lesson = await api.lesson(projectId);
+        upsertSnapshot(projectId, { lesson });
+      } catch {
+        /* no lesson yet */
+      }
     } catch (e: any) {
-      setError(e.message);
+      const msg = e.message || "Failed to load project";
+      const snap = getSnapshot(projectId);
+      if (!snap || !/not found/i.test(msg)) {
+        setError(msg);
+        setProject(null);
+        return;
+      }
+
+      // Server DB reset (common on Vercel) — recreate from browser cache
+      try {
+        const restored = await restoreProjectToServer(
+          projectId,
+          api.createProject,
+          api.saveLesson,
+        );
+        if (restored) {
+          setNotice(
+            "Server storage was reset (normal on Vercel). Restored this lesson from your browser and created a fresh server copy.",
+          );
+          nav(`/projects/${restored.newId}`, { replace: true });
+          return;
+        }
+      } catch {
+        /* fall through to cache-only */
+      }
+
+      setProject({
+        id: snap.id,
+        title: snap.title,
+        objective: snap.objective,
+        status: snap.status,
+      });
+      setCacheOnly(true);
+      setNotice(
+        "Showing a browser-cached copy — the Vercel database was cleared. Export still works. Create a new project or re-open from Home to keep editing on the server.",
+      );
     }
-  }, [projectId]);
+  }, [projectId, nav]);
 
   useEffect(() => {
     refresh();
   }, [refresh]);
 
   if (!project) {
-    return <p className="lede">{error || "Loading project…"}</p>;
+    return (
+      <div>
+        <p className="lede">{error || "Loading project…"}</p>
+        {error && (
+          <p className="notice">
+            On Vercel the database resets between cold starts.{" "}
+            <Link to="/">Create a new project</Link> (or reopen one from Home → Recent) and
+            keep the tab open while you demo — refresh will restore from this browser afterward.
+          </p>
+        )}
+      </div>
+    );
   }
 
   return (
     <div>
+      {notice && <p className="notice">{notice}</p>}
       <header className="project-header">
         <div>
           <h1>{project.title}</h1>
@@ -67,6 +137,7 @@ export default function ProjectPage() {
             <strong>Objective:</strong> {project.objective}
           </p>
           <span className={`status ${project.status}`}>{project.status}</span>
+          {cacheOnly && <span className="status">cached</span>}
         </div>
         <div className="row project-actions">
           <Link className="btn secondary" to={`/projects/${projectId}/preview`}>

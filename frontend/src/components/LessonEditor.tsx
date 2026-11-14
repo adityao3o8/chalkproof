@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "../api";
+import { getSnapshot, upsertSnapshot } from "../localCache";
 
 export default function LessonEditor({
   projectId,
@@ -16,9 +17,18 @@ export default function LessonEditor({
 
   async function load() {
     try {
-      setData(await api.lesson(projectId));
+      const lesson = await api.lesson(projectId);
+      setData(lesson);
+      upsertSnapshot(projectId, { lesson });
       setError("");
     } catch (e: any) {
+      const snap = getSnapshot(projectId);
+      if (snap?.lesson?.content) {
+        setData(snap.lesson);
+        setError("");
+        setMsg("Loaded from browser cache");
+        return;
+      }
       setError(e.message);
       setData(null);
     }
@@ -39,9 +49,15 @@ export default function LessonEditor({
     setMsg("");
     try {
       const res = await api.saveLesson(projectId, content, note);
+      upsertSnapshot(projectId, {
+        lesson: { content, version: res.version, version_id: res.version_id },
+      });
       setMsg(`Saved as v${res.version}`);
       await load();
     } catch (e: any) {
+      // Keep local edits even if server DB vanished
+      upsertSnapshot(projectId, { lesson: { content } });
+      setMsg("Saved to browser cache (server unavailable)");
       setError(e.message);
     } finally {
       setSaving(false);

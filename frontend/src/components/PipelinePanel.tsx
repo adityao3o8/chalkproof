@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../api";
+import { getSnapshot, upsertSnapshot } from "../localCache";
 
 const STEPS = ["research", "generate", "executable", "qc1", "qc2"];
 
@@ -16,7 +17,14 @@ export default function PipelinePanel({
   const [info, setInfo] = useState("");
 
   const load = useCallback(async () => {
-    setSteps(await api.steps(projectId));
+    try {
+      const s = await api.steps(projectId);
+      setSteps(s);
+      upsertSnapshot(projectId, { steps: s });
+    } catch {
+      const cached = getSnapshot(projectId)?.steps;
+      if (cached?.length) setSteps(cached);
+    }
   }, [projectId]);
 
   useEffect(() => {

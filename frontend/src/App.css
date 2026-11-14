@@ -164,6 +164,27 @@ label:first-child { margin-top: 0; }
   margin: 0.75rem 0 0;
   font-size: 0.95rem;
 }
+.notice {
+  color: #5c4a1f;
+  background: #f7f0d8;
+  border: 1px solid #e2d4a8;
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--radius);
+  margin: 0 0 1rem;
+  font-size: 0.95rem;
+}
+.recent-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0 0;
+}
+.recent-list li {
+  padding: 0.45rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.recent-list li:last-child {
+  border-bottom: none;
+}
 .info-banner {
   color: var(--accent);
   background: var(--accent-soft);

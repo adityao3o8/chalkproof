@@ -1,6 +1,7 @@
 /** Client-side lesson export — avoids Vercel /tmp SQLite cold-start 404s. */
 
 import { api } from "./api";
+import { getSnapshot } from "./localCache";
 import type { jsPDF as JsPdfType } from "jspdf";
 
 type LessonContent = {
@@ -230,22 +231,27 @@ export async function exportProjectZip(
   projectId: number,
   preloaded?: LessonContent,
 ): Promise<void> {
-  let content = preloaded;
+  const snap = getSnapshot(projectId);
+  let content = preloaded ?? snap?.lesson?.content;
   if (!content) {
-    const lesson = await api.lesson(projectId);
-    content = lesson?.content;
+    try {
+      const lesson = await api.lesson(projectId);
+      content = lesson?.content;
+    } catch {
+      /* use cache only */
+    }
   }
   if (!content) throw new Error("No lesson to export yet — run Generate first.");
 
-  let sources: unknown[] = [];
+  let sources: unknown[] = snap?.sources || [];
   try {
     sources = await api.sources(projectId);
   } catch {
     /* optional on Vercel cold start */
   }
 
-  let qc1: QCReport | null = null;
-  let qc2: QCReport | null = null;
+  let qc1: QCReport | null = (snap?.qc1 as QCReport) || null;
+  let qc2: QCReport | null = (snap?.qc2 as QCReport) || null;
   try {
     qc1 = await api.qc(projectId, 1);
   } catch {
@@ -374,10 +380,14 @@ export async function exportProjectPdf(
   projectId: number,
   preloaded?: LessonContent,
 ): Promise<void> {
-  let content = preloaded;
+  let content = preloaded ?? getSnapshot(projectId)?.lesson?.content;
   if (!content) {
-    const lesson = await api.lesson(projectId);
-    content = lesson?.content;
+    try {
+      const lesson = await api.lesson(projectId);
+      content = lesson?.content;
+    } catch {
+      /* cache only */
+    }
   }
   if (!content) throw new Error("No lesson to export yet — run Generate first.");
   await downloadLessonPdf(content, `chalkproof_${projectId}.pdf`);

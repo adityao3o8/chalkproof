@@ -1,18 +1,59 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { api } from "../api";
 import { downloadLessonFile, downloadLessonPdf, exportProjectZip } from "../exportClient";
+import { getSnapshot, restoreProjectToServer, upsertSnapshot } from "../localCache";
 
 export default function PreviewPage() {
   const { id } = useParams();
   const projectId = Number(id);
+  const nav = useNavigate();
   const [data, setData] = useState<any>(null);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState("");
 
   useEffect(() => {
-    api.lesson(projectId).then(setData).catch((e) => setError(e.message));
-  }, [projectId]);
+    let cancelled = false;
+    (async () => {
+      try {
+        const lesson = await api.lesson(projectId);
+        if (cancelled) return;
+        setData(lesson);
+        upsertSnapshot(projectId, { lesson });
+      } catch (e: any) {
+        const msg = e.message || "Failed to load";
+        const snap = getSnapshot(projectId);
+        if (snap?.lesson?.content && /not found|No lesson/i.test(msg)) {
+          if (/Project not found/i.test(msg)) {
+            try {
+              const restored = await restoreProjectToServer(
+                projectId,
+                api.createProject,
+                api.saveLesson,
+              );
+              if (restored && !cancelled) {
+                setNotice("Restored lesson after server reset — redirecting…");
+                nav(`/projects/${restored.newId}/preview`, { replace: true });
+                return;
+              }
+            } catch {
+              /* use cache */
+            }
+          }
+          if (!cancelled) {
+            setData(snap.lesson);
+            setNotice("Showing cached lesson (server storage was reset).");
+          }
+          return;
+        }
+        if (!cancelled) setError(msg);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [projectId, nav]);
 
   async function onZip() {
     setBusy("zip");
@@ -39,11 +80,12 @@ export default function PreviewPage() {
   }
 
   if (error && !data) return <p className="error">{error}</p>;
-  if (!data) return <p className="lede">Loading preview…</p>;
+  if (!data) return <p className="lede">{notice || "Loading preview…"}</p>;
   const c = data.content;
 
   return (
     <div>
+      {notice && <p className="notice">{notice}</p>}
       <div className="preview-toolbar">
         <Link to={`/projects/${projectId}`}>← Back to project</Link>
         <div className="row">

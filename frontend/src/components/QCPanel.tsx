@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../api";
+import { getSnapshot, upsertSnapshot } from "../localCache";
 
 export default function QCPanel({
   projectId,
@@ -18,8 +19,16 @@ export default function QCPanel({
   async function load(l: 1 | 2 = layer) {
     setError("");
     try {
-      setReport(await api.qc(projectId, l));
+      const report = await api.qc(projectId, l);
+      setReport(report);
+      upsertSnapshot(projectId, l === 1 ? { qc1: report } : { qc2: report });
     } catch (e: any) {
+      const snap = getSnapshot(projectId);
+      const cached = l === 1 ? snap?.qc1 : snap?.qc2;
+      if (cached) {
+        setReport(cached);
+        return;
+      }
       setReport(null);
       setError(e.message);
     }

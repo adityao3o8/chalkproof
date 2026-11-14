@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { api } from "../api";
+import { listSnapshots, upsertSnapshot, type ProjectSnapshot } from "../localCache";
 
 export default function Home() {
   const nav = useNavigate();
@@ -9,6 +10,11 @@ export default function Home() {
   const [objective, setObjective] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [recent, setRecent] = useState<ProjectSnapshot[]>([]);
+
+  useEffect(() => {
+    setRecent(listSnapshots().slice(0, 6));
+  }, []);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -20,6 +26,11 @@ export default function Home() {
     setBusy(true);
     try {
       const p = await api.createProject(title, objective);
+      upsertSnapshot(p.id, {
+        title,
+        objective,
+        status: (p as any).status || "created",
+      });
       nav(`/projects/${p.id}`);
     } catch (err: any) {
       setError(err.message || "Failed to create project");
@@ -62,6 +73,22 @@ export default function Home() {
           </button>
         </div>
       </form>
+      {recent.length > 0 && (
+        <div className="panel" style={{ marginTop: "1.25rem" }}>
+          <h2>Recent in this browser</h2>
+          <p className="meta" style={{ marginTop: 0 }}>
+            Saved locally so refresh still works when Vercel’s temporary database resets.
+          </p>
+          <ul className="recent-list">
+            {recent.map((s) => (
+              <li key={s.id}>
+                <Link to={`/projects/${s.id}`}>{s.title}</Link>
+                <span className="meta"> · {s.status}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
